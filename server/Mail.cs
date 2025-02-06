@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using MimeKit;
-
+﻿
 namespace server;
 
 using MailKit.Net.Smtp;
@@ -11,25 +9,26 @@ public class Mail
 {
     public void generateNewIssue()
     {
-        MimeMessage mimeMessage = new MimeMessage();
+            MimeMessage mimeMessage = new MimeMessage();
             mimeMessage.From.Add(new MailboxAddress("test", "kundtjanstssontest@gmail.com"));
             
             
             // Dynamic email the user enters on the webpage
             mimeMessage.To.Add(MailboxAddress.Parse("Patrik@dbi.nu"));
             
-            mimeMessage.Subject = "tjenixen";
+            mimeMessage.Subject = "Yack för att du skickat in ditt ärende till Tech E Solution";
             
             mimeMessage.Body = new TextPart("plain")
             {
-                Text = @"asdasdasdasdasda"
+                Text = @"Vi har nu tagit emot dit ärende! Kundtjänst kommer svara så fort dem kan"
+                
             };
             
             SmtpClient client = new SmtpClient();
             try
             {
                 client.Connect("smtp.gmail.com", 465, true);
-                client.Authenticate("kundtjanstssontest@gmail.com", "pfbq mnjw ifry qdyh");
+                client.Authenticate("kundtjanstssontest@gmail.com", "iitp gitd mlha yvvp");
                 client.Send(mimeMessage);
                 
             }
