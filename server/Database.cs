@@ -9,7 +9,7 @@ public class Database
     private readonly string _host = "localhost";
     private readonly string _port = "5432";
     private readonly string _username = "postgres";
-    string _password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "mypassword";
+    private readonly string _password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "mypassword";
     private readonly string _database = "postgres";
 
     private NpgsqlDataSource _connection;
