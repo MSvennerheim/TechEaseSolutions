@@ -9,7 +9,7 @@ public class Database
     private readonly string _host = "localhost";
     private readonly string _port = "5432";
     private readonly string _username = "postgres";
-    private readonly string _password; // create a .env file in /server and fill this row PGPASSWORD=mypassword
+    private readonly string _password; // create a .env file in /server and add this row PGPASSWORD=mypassword for testing with local db
     private readonly string _database = "postgres";
 
     private NpgsqlDataSource _connection;
