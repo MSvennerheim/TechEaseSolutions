@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 export default function Home() {
   return (
     <div id='header'>
-      <h1>Welcome to Home Page</h1>
+      <h1>TechEaseSolutions</h1>
       <Dropdown />
     </div>
   );

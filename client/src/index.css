@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 
 body {
     display: flex;
@@ -10,6 +10,7 @@ body {
 
 #header {
     text-align: center;
+    font-family: "Roboto Condensed", serif;
 }
 
 #formwrap {
@@ -70,8 +71,10 @@ body {
     font-family: "Roboto Mono", serif;
     min-width: 300px;
     max-width: fit-content;
-    max-height: 100%;
-    overflow-y: visible;
+    height: auto;
+    min-height: 100px;
+    overflow-y: scroll;
+    resize: none;
     text-align: left;
     padding: 12px;
     border: 1px solid #ccc;
@@ -89,7 +92,8 @@ body {
 }
 
 #skicka_ärende {
-    width: 105px;
+    font-family: "Roboto Mono", serif;
+    width: 100%;
     text-align: center;
     padding: 10px;
     background-color: #4caf50;
@@ -126,6 +130,7 @@ body {
 }
 
 #options {
+    font-family: "Roboto Mono", serif;
     width: 100%;
     padding: 12px;
     font-size: 14px;
