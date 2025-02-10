@@ -27,7 +27,8 @@ function App() {
 <Route path="/Kontakta oss" element={<KontaktaOss />} />
 <Route path="/arbetarsida" element={<Arbetarsida />} />
 <Route path="/Redigerarmedarbetare" element={<Redigerarmedarbetare/>} />
-<Route path="/Redigeramall" element={<Redigeramall/>} />      
+      <Route path="/Redigeramall" element={<Redigeramall />} /> 
+      <Route path="/Redigeramall" element={<Redigeramall />} />
 
 
 </Routes>
