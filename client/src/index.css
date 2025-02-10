@@ -1,31 +1,153 @@
-#header{
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+
+body {
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+#header {
     text-align: center;
 }
 
-#formwrap{
+#formwrap {
     display: flex;
+    flex-direction: row;
     justify-content: center;
-
+    font-family: "Roboto Mono", serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+    margin: 0 auto; 
+    background-color: #f8f8f8; /* Sätt bakgrund på hela formwrap */
+    padding: 20px;
+    border-radius: 10px; /* Runda hörn på hela wrapen */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    height: 600x;
+    width: 600px;
 }
 
-#wrapmail{
-    padding: 100px;
-    background-color: blue;
+#wrapmail {
+    font-family: "Roboto Mono", serif;
+    display: flex;
+    flex-direction: column;  /* För att sätta elementen vertikalt */
+    align-items: flex-start; /* Justera alla element till vänster */
+    width: 100%;
+    max-width: 350px;
+}
+
+#wrapmail form {
     display: flex;
     flex-direction: column;
-    
-    
+    width: 100%;
+    margin-bottom: 20px;
 }
 
-#describe{
-    width: 300px;
-    height: 200px;
+#email-input {
+    font-family: "Roboto Mono", serif;
+    min-width: 300px;
+    max-width: fit-content;
+    max-height: 2vh;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    font-size: 14px;
+    color: #555;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    overflow: hidden;
 }
 
-#dropdown{
-    background-color: brown;
+
+#email-input:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    outline: none;
 }
 
-#skicka_ärende{
-    width: 200px;
+#describe {
+    font-family: "Roboto Mono", serif;
+    min-width: 300px;
+    max-width: fit-content;
+    max-height: 100%;
+    overflow-y: visible;
+    text-align: left;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    font-size: 14px;
+    color: #555;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#describe:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    outline: none;
+}
+
+#skicka_ärende {
+    width: 105px;
+    text-align: center;
+    padding: 10px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: auto;
+    transition: background-color 0.3s;
+}
+
+#skicka_ärende:hover {
+    background-color: #45a049;
+}
+
+#dropdown {
+    font-family: "Roboto Mono", serif;
+    margin-right: 20px;
+    padding: 10px;
+    background-color: #fff; /* Bakgrund färg för dropdown */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 350px;
+    height: 100%;
+    max-height: 500px;
+}
+
+#dropdown label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #333;
+}
+
+#options {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#options:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    outline: none;
+}
+
+#dropdown p {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+#options option {
+    font-size: 14px;
 }
