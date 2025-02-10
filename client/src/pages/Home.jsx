@@ -1,40 +1,41 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 
-// ... rest of your existing code remains the same
+export default function Home() {
+  return (
+    <div id='header'>
+      <h1>Welcome to Home Page</h1>
+      <Dropdown />
+    </div>
+  );
+}
 
 const Dropdown = () => {
   const [selectedOption, setSelectedOption] = useState('');
-  const describeRef = useRef(null);
 
   const handleChange = (event) => {
     setSelectedOption(event.target.value);
   };
 
-  useEffect(() => {
-    const textarea = describeRef.current;
-    const autoResize = () => {
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
-    };
-
-    textarea.addEventListener('input', autoResize);
-    return () => textarea.removeEventListener('input', autoResize);
-  }, []);
-
   return (
     <>
     <div id="formwrap">
-      {/* ... other code remains the same */}
+      <div id="dropdown">
+        <label htmlFor="options">Välj ett ämne</label>
+        <select id="options" value={selectedOption} onChange={handleChange}>
+          <option value="">--Välj ett ämne--</option>
+          <option value="option1">Sprucken skärm</option>
+          <option value="option2">Dator startar ej</option>
+          <option value="option3">Problem med abonnemang</option>
+        </select>
+      </div>
       <div id="wrapmail">
-        {/* ... other code remains the same */}
+        <div>
+         <form>
+         <textarea id="email-input" placeholder="Enter your Email..."></textarea></form>
+        </div>
         <div>
         <form>
-        <textarea 
-          ref={describeRef}
-          name="issue" 
-          id="describe" 
-          placeholder="Describe your issue..."
-        ></textarea>
+        <textarea name="issue" id="describe" placeholder="Describe your issue..."></textarea>
         </form>
         </div>
         <button id="skicka_ärende">Skicka ärende</button>
