@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 
 export default function Home() {
+  const [userInfo, setUserInfo] = useState({
+    options: "",
+    email: "",
+    issue: ""
+  })
+  
+  const handleInput = e => {
+    const {name, value} = e.target;
+    setUserInfo({
+      ...userInfo,
+      [name]: value
+    })
+  }
+  
+  console.log(userInfo);
+  
   return (
     <div id='header'>
       <h1>Welcome to Home Page</h1>
