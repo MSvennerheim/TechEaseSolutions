@@ -1,15 +1,15 @@
 namespace server.Properties;
 using Npgsql;
-
+using DotNetEnv;
 
 public class Database
 {
+
     
-    // databasuppgifter
     private readonly string _host = "localhost";
     private readonly string _port = "5432";
     private readonly string _username = "postgres";
-    private readonly string _password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "mypassword";
+    private readonly string _password; // create a .env file in /server and fill this row PGPASSWORD=mypassword
     private readonly string _database = "postgres";
 
     private NpgsqlDataSource _connection;
@@ -23,10 +23,24 @@ public class Database
     // koppla upp till databasen (i constructorn)
     public Database()
     {
-        // bygg en anslutningssträng (Adress och inloggning till databasen) 
+        Env.Load();
+        _password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "didn't load correctly";
         string connectionString = $"Host={_host};Port={_port};Username={_username};Password={_password};Database={_database}";
-        // använd den för att hämta en anslutning
         _connection = NpgsqlDataSource.Create(connectionString);
+        
+        try
+        {
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                conn.Open();
+                Console.WriteLine("connected to db");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+
     }
 
     
