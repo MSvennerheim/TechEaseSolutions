@@ -1,0 +1,31 @@
+#header{
+    text-align: center;
+}
+
+#formwrap{
+    display: flex;
+    justify-content: center;
+
+}
+
+#wrapmail{
+    padding: 100px;
+    background-color: blue;
+    display: flex;
+    flex-direction: column;
+    
+    
+}
+
+#describe{
+    width: 300px;
+    height: 200px;
+}
+
+#dropdown{
+    background-color: brown;
+}
+
+#skicka_ärende{
+    width: 200px;
+}
