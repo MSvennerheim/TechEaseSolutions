@@ -6,6 +6,7 @@ import Arbetarsida from "./Pages/Arbetarsida.jsx";
 import Confirmationsida from "./Pages/confirmationsida.jsx";
 import Redigeramall from "./Pages/redigeramall.jsx";
 import Redigeramedarbetare from "./Pages/redigeramedarbetare.jsx";
+import ChatHistory from "./pages/Chat.jsx"
 import './index.css';
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/arbetarsida" element={<Arbetarsida />} />
         <Route path="/redigeramedarbetare" element={<Redigeramedarbetare />} />
         <Route path="/redigeramall" element={<Redigeramall />} />
+        <Route path="Chat/:chatId" element={<ChatHistory />} />
       </Routes>
     </BrowserRouter>
   );
