@@ -7,13 +7,29 @@ Queries queries = new(db);
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173") // Allow only your React frontend
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+});
 
 
 var app = builder.Build();
+app.UseCors("AllowReactApp");
 
 
 app.MapGet("/", () => "Hello World!");
+
+app.MapGet("/Chat/{chatId:int}", async (int chatId) =>
+{
+    var chatHistory = await queries.GetChatHistory(chatId);
+    return chatHistory;
+});
 
 // Lägger till en login endpoint
 app.MapPost("/login", async (HttpContext context) =>

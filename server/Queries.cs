@@ -13,7 +13,6 @@ public class Queries
         _db = db;
     }
 
-    [HttpGet("GetChatHistory")]
     public async Task<string> GetChatHistory(int chat) {
         
         // get chat history for a specific chat using chatid as a JSON file
