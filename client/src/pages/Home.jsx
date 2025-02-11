@@ -1,70 +1,103 @@
 import React, { useState } from 'react';
 
 export default function Home() {
-  const [userInfo, setUserInfo] = useState({
-    options: "",
-    email: "",
-    issue: ""
-  })
-  
-  const handleInput = e => {
-    const {name, value} = e.target;
-    setUserInfo({
-      ...userInfo,
-      [name]: value
-    })
-  }
-  
-  console.log(userInfo);
-  
   return (
-    <div id='header'>
-      <h1>Welcome to Home Page</h1>
-      <Dropdown />
-    </div>
+      <div id='header'>
+        <h1>TechEaseSolutions</h1>
+        <Dropdown />
+      </div>
   );
 }
 
 const Dropdown = () => {
   const [selectedOption, setSelectedOption] = useState('');
+  const [email, setEmail] = useState('');
+  const [issue, setIssue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-  const handleChange = (event) => {
-    setSelectedOption(event.target.value);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!email || !selectedOption || !issue) {
+      alert('Please fill in all fields before submitting.');
+      return;
+    }
+
+    setLoading(true);
+
+    const formData = {
+      email,
+      issue,
+      selectedOption,
+    };
+
+    try {
+      // Use relative path so Vite can handle proxy
+      const response = await fetch('/api/tickets/submit', {  // Use '/api/tickets/submit' (without full URL)
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setMessage('Your issue has been submitted successfully!');
+        setEmail('');
+        setIssue('');
+        setSelectedOption('');
+      } else {
+        setMessage(result.message || 'Something went wrong.');
+      }
+    } catch (error) {
+      setMessage('Error submitting the form. Please try again.');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
-    <div id="formwrap">
-      <div id="dropdown">
-        <label htmlFor="options">Choose an option:</label>
-        <select id="options" value={selectedOption} onChange={handleChange}>
-          <option value="">--Please choose an option--</option>
-          <option value="option1">Option 1</option>
-          <option value="option2">Option 2</option>
-          <option value="option3">Option 3</option>
-        </select>
-        {selectedOption && <p>You selected: {selectedOption}</p>}
+      <div id="formwrap">
+        <div id="dropdown">
+          <label htmlFor="options">Välj ett ämne</label>
+          <select id="options" value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)}>
+            <option value="">--Välj ett ämne--</option>
+            <option value="Sprucken skärm">Sprucken skärm</option>
+            <option value="Datorn startar ej">Dator startar ej</option>
+            <option value="Abonemang">Problem med abonnemang</option>
+          </select>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div id="wrapmail">
+            <div>
+            <textarea
+                id="email-input"
+                placeholder="Enter your Email..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+            />
+            </div>
+            <div>
+            <textarea
+                name="issue"
+                id="issue-description"
+                placeholder="Describe your issue..."
+                value={issue}
+                onChange={(e) => setIssue(e.target.value)}
+            />
+            </div>
+            <button id="skicka_ärende" type="submit" disabled={loading}>
+              {loading ? 'Submitting...' : 'Skicka ärende'}
+            </button>
+          </div>
+        </form>
+
+        {message && <p>{message}</p>}
       </div>
-      <div id="wrapmail">
-        <div>
-         <form>
-          <label>
-            Email:
-            <input type="text" name="email" />
-          </label>
-        </form>
-        </div>
-        <div>
-        <form>
-          <label>
-            Describe your issue
-            <input type="text" name="issue" id="describe" />
-          </label>
-        </form>
-        </div>
-        <button id="skicka_ärende">Skicka ärende</button>
-      </div>  
-    </div>
-    </>
   );
 };
