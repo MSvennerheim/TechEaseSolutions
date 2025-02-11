@@ -14,8 +14,7 @@ public class Queries
     }
 
     [HttpGet("GetChatHistory")]
-    public async Task<string> GetChatHistory(int chat)
-    {
+    public async Task<string> GetChatHistory(int chat) {
         
         // get chat history for a specific chat using chatid as a JSON file
         

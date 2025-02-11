@@ -13,6 +13,7 @@ var app = builder.Build();
 
 
 app.MapGet("/", () => "Hello World!");
+app.MapGet($"/Chat/{chatId}", async () => await queries.GetChatHistory(chatId));
 Mail newmail = new Mail();
 
 //newmail.generateNewIssue();
