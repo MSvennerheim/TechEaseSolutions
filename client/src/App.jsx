@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from './Pages/LoginUI.jsx';
 import Adminsida from "./Pages/Adminsida.jsx";
-import KontaktaOss from "./Pages/Kontaktaoss.jsx";
+import KontaktaOss from "./Pages/kontaktaoss.jsx";
 import Arbetarsida from "./Pages/Arbetarsida.jsx";
 import Confirmationsida from "./Pages/confirmationsida.jsx";
 import Redigeramall from "./Pages/redigeramall.jsx";

@@ -31,7 +31,7 @@ export function useLogin() { // här definerar vi variablerna som ska användas 
       const data = await response.json(); //Här hämtar vi svaret från servern som är en token. Om det går bra så redirectar vi användaren till dashboard.
 
       if (response.ok) {
-        localStorage.setItem('token', data.token); // lägger till en token i localstorage så att inforamatioenen kan sparas
+        localStorage.setItem('token', data.token); // lägger till en token i localstorage så att inforamationen kan sparas
         window.location.href = '/arbetarsida'; // skickar dig till arbetarsidan.
       } else {
         setError(data.message || 'Login failed');
