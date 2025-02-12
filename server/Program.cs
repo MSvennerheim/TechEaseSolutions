@@ -68,8 +68,14 @@ app.MapPost("/form", async (HttpContext context) =>
         
         if (ticketInformation != null)
         {
+            //Populate the Ticket class further and push it to DB
             queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
+            
+            // After successfull Insert, send an email the user wrote in the form
+            Mail newmail = new Mail();
+            newmail.generateNewIssue(ticketInformation);
+            
             return Results.Ok();
         }
     }
@@ -86,8 +92,7 @@ app.MapPost("/form", async (HttpContext context) =>
 
 
 
-Mail newmail = new Mail();
-//newmail.generateNewIssue();
+
 
 app.Run();
 Console.ReadLine();

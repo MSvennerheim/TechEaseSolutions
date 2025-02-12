@@ -46,6 +46,8 @@ public class Queries
     }
     public async Task customerTempUser(Ticket ticket)
     {
+        //Make sure that you can't have duplicate emails in the database.
+        
         await using (var cmd = _db.CreateCommand("INSERT INTO users (email) VALUES ($1) RETURNING id;"))
         {
             cmd.Parameters.AddWithValue(ticket.email);
@@ -54,7 +56,6 @@ public class Queries
                 if (await reader.ReadAsync())
                 {
                     ticket.id = reader.GetInt32(0);
-                    Console.WriteLine(ticket.id);
                 }
             }
         }
@@ -62,26 +63,34 @@ public class Queries
 
     public async Task postNewTicket(Ticket ticket)
     {
+        // Query to get the highest existing chatid and increment it by 1, add it to the Ticket class.
         await using (var cmd = _db.CreateCommand("SELECT COALESCE(MAX(chatid), 0) FROM messages"))
         {
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
+                
+                // find the highest number, if no row exist. Set chatid to 1.
                 if (await reader.ReadAsync())
                 {
                     ticket.chatid = reader.IsDBNull(0) ? 1 : reader.GetInt32(0) + 1;
                 }
                 else
                 {
-                    ticket.chatid = 1; // Default if no rows exist
+                    ticket.chatid = 1;
                 }
             }
         }
         
+        
+        //query to insert collected data in to the message table, (create a ticket)
         await using (var cmd = _db.CreateCommand(
                          "INSERT INTO messages (message, casetype, sender, chatid) VALUES ($1, $2, $3, $4)"))
         {
             cmd.Parameters.AddWithValue(ticket.description);
-            cmd.Parameters.AddWithValue(ticket.option);
+            
+            //Change to more dynamic options later
+            cmd.Parameters.AddWithValue(1);
+            
             cmd.Parameters.AddWithValue(ticket.id);
             cmd.Parameters.AddWithValue(ticket.chatid);
             await cmd.ExecuteNonQueryAsync();
