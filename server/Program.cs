@@ -65,11 +65,11 @@ app.MapPost("/form", async (HttpContext context) =>
         {
             return Results.BadRequest(new { message = "All fields have to be entered" });
         }
-
         
         if (ticketInformation != null)
         {
-            queries.customerTempUser(ticketInformation.email);
+            queries.customerTempUser(ticketInformation);
+            await queries.postNewTicket(ticketInformation);
             return Results.Ok();
         }
     }
@@ -77,7 +77,6 @@ app.MapPost("/form", async (HttpContext context) =>
     {
         Console.WriteLine($"Error: {ex}");
     }
-    
     return Results.BadRequest();
 });
 

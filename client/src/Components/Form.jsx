@@ -16,17 +16,25 @@ export function userInformation() {
         }
 
         try {
+            console.log({
+                email,
+                option: selectedOption,
+                description
+            });
+            
             const response = await fetch('/api/form', { 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    Email: email,
-                    Option: selectedOption,
-                    Description: description,
+                    email,
+                    option: selectedOption,
+                    description
                 }),
             });
+            const data = await response.json();
+            console.log(data);
         } catch (error) {
             setError("noob jävel")
         }
