@@ -4,6 +4,8 @@ function Home() {
 
   const { email, setEmail, selectedOption, setOption, description, setDescription, error, submitTicket } = userInformation();
   
+  //Make some improvements on the email. Make sure that the user inputs it in a correct format.
+  //Make the options dynamic by fetching the unique companies "settings" for the dropdown.
   return (
       <>
         <div id="formwrap">
