@@ -1,9 +1,12 @@
 import { useState } from 'react';
-
+import { useNavigate } from 'react-router';
 export function useLogin() { // här definerar vi variablerna som ska användas i komponeten
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,14 +34,22 @@ export function useLogin() { // här definerar vi variablerna som ska användas 
       const data = await response.json(); //Här hämtar vi svaret från servern som är en token. Om det går bra så redirectar vi användaren till dashboard.
 
       if (response.ok) {
-        localStorage.setItem('token', data.token); // lägger till en token i localstorage så att inforamatioenen kan sparas
-        window.location.href = '/arbetarsida'; // skickar dig till arbetarsidan.
+        localStorage.setItem('token', data.token);// lägger till en token i localstorage så att inforamatioenen kan sparas
+        localStorage.setItem('userRole', data.user.isAdmin ? 'admin' : 'Worker')
+
+ console.log('IsAdmin:', data.user.isAdmin);
+
+        if (data.user.isAdmin) {
+          navigate('/admin'); // om man är admin så redirectar vi till dashboard
+        } else {
+          navigate('/arbetarsida'); // annars redirectar vi till arbetarsidan
+        }
       } else {
         setError(data.message || 'Login failed');
-      }
-    } catch (err) {
+      }  
+    } catch (error) {
       setError('An error occurred during login');
-      console.error('Login error:', err);
+      console.error('Login error:', error);
     }
   };
 
