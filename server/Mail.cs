@@ -14,7 +14,7 @@ public class Mail
             
             
             // Dynamic email the user enters on the webpage
-            mimeMessage.To.Add(MailboxAddress.Parse("Patrik@dbi.nu"));
+            mimeMessage.To.Add(MailboxAddress.Parse(""));
             
             mimeMessage.Subject = "Yack för att du skickat in ditt ärende till Tech E Solution";
             

@@ -51,6 +51,42 @@ app.MapPost("/login", async (HttpContext context) =>
         return Results.BadRequest(new { message = ex.Message });
     }
 });
+
+app.MapPost("/form", async (HttpContext context) =>
+{
+    try
+    {
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var ticketInformation = JsonSerializer.Deserialize<Ticket>(body);
+        
+        
+        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) || string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
+        {
+            return Results.BadRequest(new { message = "All fields have to be entered" });
+        }
+
+        
+        if (ticketInformation != null)
+        {
+            queries.customerTempUser(ticketInformation.email);
+            return Results.Ok();
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+    }
+    
+    return Results.BadRequest();
+});
+
+
+
+
+
+
+
 Mail newmail = new Mail();
 //newmail.generateNewIssue();
 

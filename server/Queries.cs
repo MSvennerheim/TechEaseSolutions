@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace server;
 using Npgsql;
 
@@ -42,7 +44,27 @@ public class Queries
         
         return null;
     }
+    public async Task customerTempUser(string email)
+    {
+        await using (var cmd = _db.CreateCommand("INSERT INTO users (email) VALUES ($1)"))
+        {
+            cmd.Parameters.AddWithValue(email);
+            await cmd.ExecuteNonQueryAsync();
+        }
+    }
+    public async Task fetchUserInformation(string email)
+    {
+        
+    }
+
+    public async Task fetchCompanyCaseTypes()
+    {
+        
+    }
+    
 }
+
+
 
 public class User
 {
