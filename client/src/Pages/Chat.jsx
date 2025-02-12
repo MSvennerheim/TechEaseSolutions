@@ -20,7 +20,7 @@ const ChatHistory = () => {
       <ul>
         {data.map((chat, index) => (
           <li key={index}>
-            <small>{chat.sender} skrev: </small><br /> {/*fix this to name later, but email is good enough for now */}
+            <small>{chat.sender} skrev: </small><br /> {/*fix this to name later, but email is good enough for now... Also need to add check if it's a cs reprasentative */}
             <small>{chat.message}  </small><br />
             <small>{chat.timestamp}</small>
           </li>
