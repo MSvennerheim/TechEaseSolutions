@@ -31,6 +31,11 @@ app.MapGet("/Chat/{chatId:int}", async (int chatId) =>
     return chatHistory;
 });
 
+app.MapGet("/arbetarsida/{company}", async (string company) =>
+{
+    return await queries.GetChatsForCsRep(company);
+});
+
 // Lägger till en login endpoint
 app.MapPost("/login", async (HttpContext context) =>
 {

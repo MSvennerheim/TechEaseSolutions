@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MailKit.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace server;
@@ -36,6 +37,40 @@ public class Queries
             }
         }
         return JsonSerializer.Serialize(messages, new JsonSerializerOptions {WriteIndented = true});
+    }
+
+    public async Task<string> GetChatsForCsRep(string company)
+    {
+        var chats = new List<object>();
+
+        const string sql = @"
+            SELECT DISTINCT ON (chatid) chatid, message, email, timestamp, ""customer-service-user""
+            FROM messages
+            JOIN users ON messages.sender = users.id
+            JOIN companies ON messages.company = companies.id
+            WHERE companies.name = @company
+            ORDER BY chatid, timestamp DESC";
+        
+        
+        await using (var cmd = _db.CreateCommand(sql))
+        {
+            cmd.Parameters.AddWithValue("@company", company);
+            await using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    chats.Add(new
+                    {
+                        chat = reader.GetInt32(0),
+                        message = reader.GetString(1),
+                        sender = reader.GetString(2),
+                        timestamp = reader.GetDateTime(3).ToString("o"),
+                        csrep = reader.GetBoolean(4)
+                    });
+                }
+            }
+        }
+        return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
     }
     
     
