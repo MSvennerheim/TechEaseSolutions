@@ -32,6 +32,9 @@ app.MapPost("/login", async (HttpContext context) =>
         var user = await queries.ValidateUser(loginData.Email, loginData.Password);
         if (user != null)
         {
+            
+            Console.WriteLine($"User: {JsonSerializer.Serialize(user)}");
+
             return Results.Ok(new { 
                 token = "test-token",
                 user = new {
@@ -39,7 +42,7 @@ app.MapPost("/login", async (HttpContext context) =>
                     email = user.Email,
                     company = user.Company,
                     isCustomerServiceUser = user.IsCustomerServiceUser,
-                    isAdmin = user.IsAdmin
+                    isAdmin = user.IsAdmin 
                 }
             });
         }
