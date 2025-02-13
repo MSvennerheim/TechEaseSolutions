@@ -15,7 +15,7 @@ public class Queries
     public async Task<User?> ValidateUser(string email, string password)
     {
         const string sql = @"
-            SELECT id, email, password, company, ""customer-service-user"", admin
+            SELECT id, email, password, company, csrep, admin
             FROM users 
             WHERE email = @email";
 
@@ -36,7 +36,7 @@ public class Queries
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     Email = reader.GetString(reader.GetOrdinal("email")),
                     Company = reader.GetInt32(reader.GetOrdinal("company")),
-                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("customer-service-user")),
+                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
                     IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
                 };
             }
