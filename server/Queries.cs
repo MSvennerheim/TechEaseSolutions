@@ -77,7 +77,7 @@ public class Queries
     public async Task<User?> ValidateUser(string email, string password)
     {
         const string sql = @"
-            SELECT id, email, password, company, ""customer-service-user"", admin
+            SELECT id, email, password, company, csrep, admin
             FROM users 
             WHERE email = @email";
 

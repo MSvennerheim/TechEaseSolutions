@@ -5,14 +5,14 @@ const ChatHistory = () => {
   const { chatId } = useParams()
   const [data, setData] = useState([])
   useEffect(() => {
-    const GetChat = async () => {
+    const GetChats = async () => {
       const response = await fetch(`http://localhost:5000/Chat/${chatId}`)
       const responseData = await response.json()
       setData(responseData)
       //console.log(responseData)
     }
 
-    GetChat()
+    GetChats()
 
   }, [])
   return (
