@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import ChatHistory from "./Chat";
 
 const Arbetarsida = () => {
   const { company } = useParams()
   const [data, setData] = useState([])
   useEffect(() => {
     const GetAllChats = async () => {
-      const response = await fetch(`http://localhost:5000/arbetarsida/${company}`)
+      const response = await fetch(`/api/arbetarsida/${company}`)
       const responseData = await response.json()
       setData(responseData)
       console.log(responseData)

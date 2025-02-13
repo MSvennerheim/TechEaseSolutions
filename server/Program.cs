@@ -7,6 +7,7 @@ Queries queries = new(db);
 
 var builder = WebApplication.CreateBuilder(args);
 
+/*
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
@@ -17,21 +18,22 @@ builder.Services.AddCors(options =>
                 .AllowAnyHeader();
         });
 });
+*/
 
 
 var app = builder.Build();
-app.UseCors("AllowReactApp");
+// app.UseCors("AllowReactApp");
 
 
 app.MapGet("/", () => "Hello World!");
 
-app.MapGet("/Chat/{chatId:int}", async (int chatId) =>
+app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
 {
     var chatHistory = await queries.GetChatHistory(chatId);
     return chatHistory;
 });
 
-app.MapGet("/arbetarsida/{company}", async (string company) =>
+app.MapGet("/api/arbetarsida/{company}", async (string company) =>
 {
     var chats = await queries.GetChatsForCsRep(company);
     return chats;

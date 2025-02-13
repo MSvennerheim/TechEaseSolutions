@@ -72,6 +72,71 @@ public class Queries
         }
         return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
     }
+
+    public async Task<string> WriteChatToDB(string message, string email, int chatId, int caseType, string company, bool csrep)
+    {
+        // first get id for user from email and company from name, create timestamp and write to db.
+        // if sender is csrep also return mailadress for sending to that ticket has been updated 
+        
+        int senderId;
+        int companyId;
+        const string getId = @"SELECT users.id, c.id
+                                    FROM users
+                                    JOIN public.companies c on users.company = c.id
+                                    WHERE email = @email 
+                                    AND c.name = @company";
+        await using (var cmd = _db.CreateCommand(getId))
+        {
+            cmd.Parameters.AddWithValue("@email", email);
+            cmd.Parameters.AddWithValue("@company", company);
+            await using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    senderId = reader.GetInt32(0);
+                    companyId = reader.GetInt32(1);
+                }
+            }
+        }
+        
+        DateTime currentTime = DateTime.Now;
+        const string writeToDB = @"INSERT INTO messages (message, company, casetype, sender, chatid, timestamp)
+                                        values (@message, @companyId, @casetype, @senderId, @chatId, @currentTime )";
+        await using (var cmd = _db.CreateCommand(writeToDB))
+        {
+            cmd.Parameters.AddWithValue("@message", message);
+            cmd.Parameters.AddWithValue("@companyId", companyId);
+            cmd.Parameters.AddWithValue("@casetype", caseType);
+            cmd.Parameters.AddWithValue("@senderId", senderId);
+            cmd.Parameters.AddWithValue("@chatId", chatId);
+            cmd.Parameters.AddWithValue("@currentTime", currentTime);
+            await using var reader = await cmd.ExecuteReaderAsync();
+        }
+        
+        // if sender is csrep get email for customer and send them a confirmation
+
+        if (csrep)
+        {
+            string customerEmail;
+            const string getCustomerMail = @"SELECT u.email
+                                                from messages
+                                                JOIN public.users u on u.id = messages.sender
+                                                WHERE u.csrep = false
+                                                AND chatid = @chatId
+                                                LIMIT 1";
+            
+            await using (var cmd = _db.CreateCommand(getCustomerMail))
+            {
+                cmd.Parameters.AddWithValue("@chatId", chatId);
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    customerEmail = reader.GetString(0);
+                }
+            }
+            return customerEmail;
+        }
+        return "";
+    }
     
     
     public async Task<User?> ValidateUser(string email, string password)

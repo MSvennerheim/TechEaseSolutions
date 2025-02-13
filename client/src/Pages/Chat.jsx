@@ -6,7 +6,7 @@ const ChatHistory = () => {
   const [data, setData] = useState([])
   useEffect(() => {
     const GetChats = async () => {
-      const response = await fetch(`http://localhost:5000/Chat/${chatId}`)
+      const response = await fetch(`/api/Chat/${chatId}`)
       const responseData = await response.json()
       setData(responseData)
       //console.log(responseData)
