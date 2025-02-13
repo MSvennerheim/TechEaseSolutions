@@ -17,8 +17,23 @@ function Home() {
         console.log(data)
       }
       getCompanyName();
-    })
+    }, [])
   }
+  
+  /*
+  const Arbetarsida = () => {
+  const { company } = useParams()
+  const [data, setData] = useState([])
+  useEffect(() => {
+    const GetAllChats = async () => {
+      const response = await fetch(`http://localhost:5000/arbetarsida/${company}`)
+      const responseData = await response.json()
+      setData(responseData)
+      console.log(responseData)
+    }
+    GetAllChats()
+  }, [])
+   */
   
   return (
       <>
