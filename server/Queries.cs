@@ -99,7 +99,7 @@ public class Queries
         }
     }
 
-    public async Task getCompanyName(string name)
+    public async Task<string> getCompanyName(string name)
     {
         await using (var cmd = _db.CreateCommand("SELECT name FROM companies WHERE name = $1"))
         {
