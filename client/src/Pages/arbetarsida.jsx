@@ -1,24 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-const CompanyChats = () => {
+const Arbetarsida = () => {
   const { company } = useParams()
-  const { data, setData } = useState([])
+  const [data, setData] = useState([])
   useEffect(() => {
     const GetAllChats = async () => {
-      const response = await fetch(`http://localhost/arbetarsida/${company}`)
+      const response = await fetch(`http://localhost:5000/arbetarsida/${company}`)
       const responseData = await response.json()
       setData(responseData)
+      console.log(responseData)
     }
-    CompanyChats()
+    GetAllChats()
   }, [])
   return (
     <div>
       <ul>
         {data.map((chats, index) => (
           <li key={index}>
-            <small>{chats.sender} skrev: </small><br />
-            <small>{chats.timestamp}</small>
+            <small>{chats.chat}</small><br />
+            <small>{chats.message} </small><br />
+            <small>{chats.timestamp}</small><br />
           </li>
         ))}
       </ul>
@@ -26,4 +28,4 @@ const CompanyChats = () => {
   )
 }
 
-export default arbetarsida;
+export default Arbetarsida;
