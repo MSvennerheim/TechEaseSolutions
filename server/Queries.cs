@@ -98,6 +98,24 @@ public class Queries
             await cmd.ExecuteNonQueryAsync();
         }
     }
+
+    public async Task getCompanyName(string name)
+    {
+        await using (var cmd = _db.CreateCommand("SELECT name FROM companies WHERE name = $1"))
+        {
+            cmd.Parameters.AddWithValue(name);
+            await using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                if (!reader.HasRows)
+                {
+                    
+                }
+                name = await reader.GetFieldValueAsync<string>(0);
+                return name;
+            }
+            
+        }
+    }
 }
 
 

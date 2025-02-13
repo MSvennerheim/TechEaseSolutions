@@ -6,14 +6,34 @@ var db = database.Connection();
 Queries queries = new(db);
 
 var builder = WebApplication.CreateBuilder(args);
+/*
+ 
+ app.MapGet("/Chat/{chatId:int}", async (int chatId) =>
+{
+    var chatHistory = await queries.GetChatHistory(chatId);
+    return chatHistory;
+});
 
+app.MapGet("/arbetarsida/{company}", async (string company) =>
+{
+    var chats = await queries.GetChatsForCsRep(company);
+    return chats;
+});
 
-
+ */
 
 var app = builder.Build();
 
 
 app.MapGet("/", () => "Hello World!");
+
+
+app.MapGet("/kontaktaoss/{company}", async (string company) =>
+{
+    var name = await queries.getCompanyName(company);
+    return name;
+});
+
 
 // Lägger till en login endpoint
 app.MapPost("/login", async (HttpContext context) =>
@@ -85,6 +105,8 @@ app.MapPost("/form", async (HttpContext context) =>
     }
     return Results.BadRequest();
 });
+
+
 
 
 
