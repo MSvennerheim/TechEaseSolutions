@@ -95,7 +95,6 @@ app.MapPost("/form", async (HttpContext context) =>
 
 
 app.Run();
-Console.ReadLine();
 
 public class LoginRequest
 {

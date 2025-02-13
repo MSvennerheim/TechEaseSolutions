@@ -10,14 +10,13 @@ public class Mail
     public void generateNewIssue(Ticket ticketinformation)
     {
         MimeMessage mimeMessage = new MimeMessage();
-        mimeMessage.From.Add(new MailboxAddress("Tech E Solution", "kundtjanstssontest@gmail.com"));
+        mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
         mimeMessage.To.Add(MailboxAddress.Parse(ticketinformation.email));
-        mimeMessage.Subject = "Tack för att du skickat in ditt ärende till Tech E Solution";
+        mimeMessage.Subject = "Tack för att du skickat in ditt ärende till TechEaseSolution";
 
-        // Create a BodyBuilder to include HTML and an embedded image
+
         var bodyBuilder = new BodyBuilder();
-
-        // Add HTML body with embedded image
+        
         bodyBuilder.HtmlBody = @$"
         <html>
         <body>
@@ -29,12 +28,12 @@ public class Mail
         </body>
         </html>";
 
-        // Attach the image and set Content-ID
-        string imagePath = "TecheaseSolutionslogo.png"; // Change this to the actual image path
+        
+        string imagePath = "TecheaseSolutionslogo.png";
         if (File.Exists(imagePath))
         {
             var image = bodyBuilder.LinkedResources.Add(imagePath);
-            image.ContentId = "image1"; // This ID is used in the <img src='cid:image1'>
+            image.ContentId = "image1";
         }
         else
         {

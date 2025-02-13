@@ -81,22 +81,23 @@ public class Queries
             }
         }
         
+        DateTime now = DateTime.Now;
         
         //query to insert collected data in to the message table, (create a ticket)
         await using (var cmd = _db.CreateCommand(
-                         "INSERT INTO messages (message, casetype, sender, chatid) VALUES ($1, $2, $3, $4)"))
+                         "INSERT INTO messages (message, casetype, sender, chatid, timestamp) VALUES ($1, $2, $3, $4, $5)"))
         {
             cmd.Parameters.AddWithValue(ticket.description);
             
             //Change to more dynamic options later
-            cmd.Parameters.AddWithValue(1);
+            cmd.Parameters.AddWithValue(2);
             
             cmd.Parameters.AddWithValue(ticket.id);
             cmd.Parameters.AddWithValue(ticket.chatid);
+            cmd.Parameters.AddWithValue(now);
             await cmd.ExecuteNonQueryAsync();
         }
     }
-    
 }
 
 
