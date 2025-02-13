@@ -1,5 +1,33 @@
-﻿import {useState} from "react";
+﻿import {useEffect, useState} from "react";
+import {useParams} from "react-router-dom";
 
+
+/*
+const ChatHistory = () => {
+  const { chatId } = useParams()
+  const [data, setData] = useState([])
+  useEffect(() => {
+    const GetChat = async () => {
+      const response = await fetch(`http://localhost:5000/Chat/${chatId}`)
+      const responseData = await response.json()
+      setData(responseData)
+      //console.log(responseData)
+    }
+    */
+
+
+const companies = () => {
+    const { name } = useParams()
+    const [data, setData] = useState([])
+    useEffect(() => {
+        const getCompanyName = async () => {
+            const response = await fetch(`/api/kontaktaoss/${name}`)
+            const responseData = await response.json()
+            setData(responseData)
+            //console.log(responseData)
+        }
+
+        
 export function userInformation() {
     const [email, setEmail] = useState('');
     const [selectedOption, setOption] = useState('');

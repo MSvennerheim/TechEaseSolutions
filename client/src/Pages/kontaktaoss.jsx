@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {userInformation} from '../Components/Form.jsx'
+import {useParams} from "react-router-dom";
 function Home() {
-
+  
   const { email, setEmail, selectedOption, setOption, description, setDescription, error, submitTicket } = userInformation();
   
   //Make some improvements on the email. Make sure that the user inputs it in a correct format.
