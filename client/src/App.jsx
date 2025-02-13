@@ -16,7 +16,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Adminsida />} />
         <Route path="/confirmation" element={<Confirmationsida />} />
-        <Route path="/kontaktaoss" element={<KontaktaOss />} />
+        <Route path="/kontaktaoss/:company" element={<KontaktaOss />} />
         <Route path="/arbetarsida" element={<Arbetarsida />} />
         <Route path="/redigeramedarbetare" element={<Redigeramedarbetare />} />
         <Route path="/redigeramall" element={<Redigeramall />} />

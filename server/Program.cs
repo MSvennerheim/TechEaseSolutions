@@ -74,7 +74,7 @@ app.MapPost("/form", async (HttpContext context) =>
             
             // After successfull Insert, send an email the user wrote in the form
             Mail newmail = new Mail();
-            newmail.generateNewIssue(ticketInformation);
+            //newmail.generateNewIssue(ticketInformation);
             
             return Results.Ok();
         }

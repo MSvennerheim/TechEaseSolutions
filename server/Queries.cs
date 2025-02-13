@@ -96,11 +96,6 @@ public class Queries
             await cmd.ExecuteNonQueryAsync();
         }
     }
-
-    public async Task fetchCompanyCaseTypes()
-    {
-        
-    }
     
 }
 
