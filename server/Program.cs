@@ -28,10 +28,12 @@ var app = builder.Build();
 app.MapGet("/", () => "Hello World!");
 
 
-app.MapGet("/kontaktaoss/{company}", async (string company) =>
+app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
 {
-    var name = await queries.getCompanyName(company);
-    return name;
+    var companyDetails = await queries.getCompanyName(company);
+    
+    Console.WriteLine("Program");
+    return companyDetails;
 });
 
 

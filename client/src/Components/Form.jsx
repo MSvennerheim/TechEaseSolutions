@@ -15,10 +15,6 @@ const ChatHistory = () => {
     }
     */
 
-
-
-
-        
 export function userInformation() {
     const [email, setEmail] = useState('');
     const [selectedOption, setOption] = useState('');

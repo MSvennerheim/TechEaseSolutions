@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace server;
 using Npgsql;
@@ -101,17 +102,19 @@ public class Queries
 
     public async Task<string> getCompanyName(string name)
     {
-        await using (var cmd = _db.CreateCommand("SELECT name FROM companies WHERE name = $1"))
+        var caseTypes = new List<object>();
+        
+        await using (var cmd = _db.CreateCommand("SELECT text FROM casetypes WHERE company = $1"))
         {
             cmd.Parameters.AddWithValue(name);
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
-                if (!reader.HasRows)
+                while (await reader.ReadAsync())
                 {
-                    
+                    caseTypes.Add(reader.GetString(reader.GetOrdinal("text")));
                 }
-                name = await reader.GetFieldValueAsync<string>(0);
-                return name;
+                Console.WriteLine("Queries");
+                return JsonSerializer.Serialize(caseTypes, new JsonSerializerOptions {WriteIndented = true});
             }
             
         }

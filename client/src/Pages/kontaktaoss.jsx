@@ -5,6 +5,7 @@ function Home() {
   
   const { email, setEmail, selectedOption, setOption, description, setDescription, error, submitTicket } = userInformation();
   
+  //Refactor var names to be more readable
   const companies = () => {
     const { name } = useParams()
     const [data, setData] = useState([])
@@ -13,10 +14,12 @@ function Home() {
         const response = await fetch(`/api/kontaktaoss/${name}`)
         const responseData = await response.json()
         setData(responseData)
+        console.log(data)
       }
-      
-  //Make some improvements on the email. Make sure that the user inputs it in a correct format.
-  //Make the options dynamic by fetching the unique companies "settings" for the dropdown.
+      getCompanyName();
+    })
+  }
+  
   return (
       <>
         <div id="formwrap">
