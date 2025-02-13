@@ -44,7 +44,7 @@ public class Queries
         var chats = new List<object>();
 
         const string sql = @"
-            SELECT DISTINCT ON (chatid) chatid, message, email, timestamp, ""customer-service-user""
+            SELECT DISTINCT ON (chatid) chatid, message, email, timestamp, csrep
             FROM messages
             JOIN users ON messages.sender = users.id
             JOIN companies ON messages.company = companies.id

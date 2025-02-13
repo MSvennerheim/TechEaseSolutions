@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173") // Allow only your React frontend
+            policy.WithOrigins("http://localhost:5173")
                 .AllowAnyMethod()
                 .AllowAnyHeader();
         });
@@ -33,7 +33,8 @@ app.MapGet("/Chat/{chatId:int}", async (int chatId) =>
 
 app.MapGet("/arbetarsida/{company}", async (string company) =>
 {
-    return await queries.GetChatsForCsRep(company);
+    var chats = await queries.GetChatsForCsRep(company);
+    return chats;
 });
 
 // Lägger till en login endpoint
