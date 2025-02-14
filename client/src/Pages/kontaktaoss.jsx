@@ -12,12 +12,12 @@ function Home() {
         const response = await fetch(`/api/kontaktaoss/${companyName}`);
         if (!response.ok) throw new Error("Failed to fetch case types");
         const responseData = await response.json()
-        console.log(responseData)
+        // console.log(responseData)
         setData(responseData)
-        console.log(data)
+        // Console.log(data)
 
       } catch (error) {
-        console.error("dasdasdasda", error);
+        console.error("An error has occured:", error);
       }
     };
       getCompanyCaseTypes();
@@ -48,7 +48,7 @@ function Home() {
                 <option value="">--Välj ett ämne--</option>
                 {data.length > 0 ? (
                     data.map((caseType, index) => (
-                        <option key={index} value={caseType.caseId}>
+                        <option key={index} value={caseType.caseId} onChange={(e) => setOption(e.target.value)}>
                           {caseType.caseType}
                         </option>
                     ))

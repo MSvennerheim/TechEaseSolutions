@@ -30,9 +30,10 @@ app.MapGet("/", () => "Hello World!");
 
 app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
 {
-    Console.WriteLine(company);
+    // Console.WriteLine(company);
     var companyDetails = await queries.GetCompanyName(company);
-    Console.WriteLine(companyDetails);
+    
+    // Console.WriteLine(companyDetails);
     return companyDetails;
 });
 
@@ -92,6 +93,7 @@ app.MapPost("/api/form", async (HttpContext context) =>
         {
             //Populate the Ticket class further and push it to DB
             queries.customerTempUser(ticketInformation);
+            await queries.CompanyName(ticketInformation);
             await queries.postNewTicket(ticketInformation);
             
             // After successfull Insert, send an email the user wrote in the form

@@ -2,6 +2,7 @@
 
 public class Ticket
 {
+    public int companyId { get; set; }
     public int id { get; set; }
     public string email { get; set; }
     public string option { get; set; }

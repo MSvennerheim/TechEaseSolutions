@@ -49,7 +49,7 @@ export function userInformation() {
                 }),
             });
             const data = await response.json();
-            console.log(data);
+            // console.log(data);
         } catch (error) {
             setError("noob jävel")
         }

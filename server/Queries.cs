@@ -86,17 +86,33 @@ public class Queries
         
         //query to insert collected data in to the message table, (create a ticket)
         await using (var cmd = _db.CreateCommand(
-                         "INSERT INTO messages (message, casetype, sender, chatid, timestamp) VALUES ($1, $2, $3, $4, $5)"))
+                         "INSERT INTO messages (message, casetype, sender, chatid, timestamp, company) VALUES ($1, $2, $3, $4, $5, $6)"))
         {
             cmd.Parameters.AddWithValue(ticket.description);
-            
-            //Change to more dynamic options later
-            cmd.Parameters.AddWithValue(2);
-            
+            cmd.Parameters.AddWithValue(int.Parse(ticket.option));
             cmd.Parameters.AddWithValue(ticket.id);
             cmd.Parameters.AddWithValue(ticket.chatid);
             cmd.Parameters.AddWithValue(now);
+            
+            cmd.Parameters.AddWithValue(ticket.companyId);
             await cmd.ExecuteNonQueryAsync();
+        }
+    }
+
+    public async Task CompanyName(Ticket ticket)
+    {
+        await using (var cmd = _db.CreateCommand(
+                         "SELECT casetypes.id, c.id FROM casetypes INNER JOIN public.companies c on c.id = casetypes.company WHERE casetypes.id = $1"))
+        {
+            cmd.Parameters.AddWithValue(int.Parse(ticket.option));
+            await using var reader = await cmd.ExecuteReaderAsync();
+            {
+                while (await reader.ReadAsync())
+                {
+                    ticket.companyId = reader.GetInt32(1);
+                }
+                
+            }
         }
     }
 
