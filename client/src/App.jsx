@@ -20,7 +20,8 @@ export default function App() {
 
         {/* Skyddad routes */}
     <Route path="/arbetarsida" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
-<Route path="/admin" element={<ProtectedRoute><Adminsida /></ProtectedRoute>} />
+    <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Adminsida /></ProtectedRoute>} />
+
 
 
         {/* vet inte rikigt än Routes */}
