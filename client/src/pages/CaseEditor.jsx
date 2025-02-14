@@ -18,6 +18,10 @@ function CaseEditor() {
         setNewTopic("");
     };
 
+       const removeTopic = (topicText) => {
+        setTopics(topics.filter(topic => topic.text !== topicText));
+    };
+
     const handleSave = () => {
         const validTopics = topics.filter(t => t.id !== null); // Filtrera bort ogiltiga poster
 
@@ -45,29 +49,33 @@ function CaseEditor() {
     };
 
 
-    return (
-        <div>
-            <h2>Redigera ämnen för företag {companyId}</h2>
-            <textarea value={newTopic} onChange={(e) => setNewTopic(e.target.value)} />
-            <button onClick={handleAddTopic}>Lägg till</button>
-            <ul>
-                {topics.map((t, index) => (
-                    <li key={index}>
-                        <input
-                            type="text"
-                            value={t.text}
-                            onChange={(e) => {
-                                const newTopics = [...topics];
-                                newTopics[index].text = e.target.value;
-                                setTopics(newTopics);
-                            }}
-                        />
-                    </li>
-                ))}
-            </ul>
-            <button onClick={handleSave}>Spara i databasen</button>
-        </div>
-    );
-}
+ return (
+        <div id="modifywrapper">
+            <h1>Redigera ämnen för företag {companyId}</h1>
+            <div id="text_button">
+                <textarea value={newTopic} onChange={(e) => setNewTopic(e.target.value)} />
+                <button onClick={handleAddTopic}>Lägg till</button>
+            </div>
+            <div id="topics-list">
+                {topics.length === 0 ? (
+                    <p>Inga ämnen tillagda</p>
+                ) : (
+                    topics.map((topic, index) => (
+                        <div key={index} id="topic-container">
+                            <input 
+                                id="topic-input"
+                                type="text" 
+                                value={topic.text} 
+                                onChange={(e) => {
+                                    const newTopics = [...topics];
+                                    newTopics[index].text = e.target.value;
+                                    setTopics(newTopics);
+                                }} 
+                            />
+                            <button id="delete-button" onClick={() => removeTopic(topic.text)}>🗑️</button>
+                        </div>
+                    ))
+                )}
+            </div>
 
 export default CaseEditor;
