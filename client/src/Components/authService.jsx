@@ -1,3 +1,5 @@
+
+// en funktion som kollar om användaren är inloggad och returnerar användarens data eller null.
 export async function checkAuth() {
   try {
     const response = await fetch("/api/check-session");
@@ -13,10 +15,3 @@ export async function checkAuth() {
   return null;
 }
 
-export const logout = async () => {
-  try {
-    await fetch('/api/logout', { method: 'POST' });
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
-};
