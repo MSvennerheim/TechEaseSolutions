@@ -39,7 +39,7 @@ app.MapGet("/api/ChatResponse/{chatResponse}", async (string chatResponse) =>
 {
     
     // deserialize json before putting into WriteChatToDB
-    // (needed here since we need chatId to be pushed into email confirmation)
+    // (needed here since chatId is needed for emailConfirmationOnAnswer)
 
     ChatData? chatData = JsonSerializer.Deserialize<ChatData>(chatResponse, new JsonSerializerOptions
     {
