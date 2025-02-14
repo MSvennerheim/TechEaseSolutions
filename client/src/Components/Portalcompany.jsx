@@ -3,7 +3,7 @@ import React from 'react'
 function Portalcompany() {
   return (
     <div>
-      Portal company
+      Portal Company
     </div>
   )
 }
