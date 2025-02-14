@@ -1,61 +1,82 @@
-import React, {useEffect, useState} from 'react';
-import {userInformation} from '../Components/Form.jsx'
-import {useParams} from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { userInformation } from "../Components/Form.jsx";
+import { useParams } from "react-router-dom";
+
 function Home() {
+  const { companyName } = useParams();
+  const [data, setData] = useState([]);
   
-  const { email, setEmail, selectedOption, setOption, description, setDescription, error, submitTicket } = userInformation();
-  
-  //Refactor var names to be more readable
-  const companies = () => {
-    const { name } = useParams()
-    const [data, setData] = useState([])
-    useEffect(() => {
-      const getCompanyName = async () => {
-        const response = await fetch(`/api/kontaktaoss/${name}`)
+  useEffect(() => {
+    const getCompanyCaseTypes = async () => {
+      try {
+        const response = await fetch(`/api/kontaktaoss/${companyName}`);
+        if (!response.ok) throw new Error("Failed to fetch case types");
         const responseData = await response.json()
+        console.log(responseData)
         setData(responseData)
         console.log(data)
+
+      } catch (error) {
+        console.error("dasdasdasda", error);
       }
-      getCompanyName();
-    }, [])
-  }
-  
-  /*
-  const Arbetarsida = () => {
-  const { company } = useParams()
-  const [data, setData] = useState([])
-  useEffect(() => {
-    const GetAllChats = async () => {
-      const response = await fetch(`http://localhost:5000/arbetarsida/${company}`)
-      const responseData = await response.json()
-      setData(responseData)
-      console.log(responseData)
-    }
-    GetAllChats()
-  }, [])
-   */
-  
+    };
+      getCompanyCaseTypes();
+  }, []);
+
+  const {
+    email,
+    setEmail,
+    selectedOption,
+    setOption,
+    description,
+    setDescription,
+    error,
+    submitTicket,
+  } = userInformation();
+
   return (
       <>
         <div id="formwrap">
           <form onSubmit={submitTicket}>
             <div id="dropdown">
               <label htmlFor="options">Välj ett ämne</label>
-              <select id="options" value={selectedOption} onChange={(e) => setOption(e.target.value)}>
+              <select
+                  id="options"
+                  value={selectedOption}
+                  onChange={(e) => setOption(e.target.value)}
+              >
                 <option value="">--Välj ett ämne--</option>
-                <option value="Sprucken skärm">Sprucken skärm</option>
-                <option value="Desktop">Dator startar ej</option>
-                <option value="Abonnemang">Problem med abonnemang</option>
+                {data.length > 0 ? (
+                    data.map((caseType, index) => (
+                        <option key={index} value={caseType.caseId}>
+                          {caseType.caseType}
+                        </option>
+                    ))
+                ) : (
+                    <option disabled>Laddar...</option>
+                )}
               </select>
             </div>
             <div id="wrapmail">
               <div>
-                <input id="email" value={email} placeholder="Enter your Email..." onChange={(e) => setEmail(e.target.value)}></input>
+                <input
+                    id="email"
+                    value={email}
+                    placeholder="Enter your Email..."
+                    onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div>
-                  <input name="issue" value={description} placeholder="Describe your issue..." onChange={(e) => setDescription(e.target.value)}></input>
+                <input
+                    name="issue"
+                    value={description}
+                    placeholder="Describe your issue..."
+                    onChange={(e) => setDescription(e.target.value)}
+                />
               </div>
-              <button id="skicka_ärende" type="submit">Skicka ärende</button>
+              <button id="skicka_ärende" type="submit">
+                Skicka ärende
+              </button>
             </div>
           </form>
         </div>

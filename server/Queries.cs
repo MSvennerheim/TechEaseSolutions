@@ -100,24 +100,28 @@ public class Queries
         }
     }
 
-    public async Task<string> getCompanyName(string name)
+    public async Task<string> GetCompanyName(string name)
     {
-        var caseTypes = new List<object>();
-        
-        await using (var cmd = _db.CreateCommand("SELECT text FROM casetypes WHERE company = $1"))
+        var caseTypesList = new List<object>();
+
+        await using (var cmd = _db.CreateCommand("SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @name"))
         {
-            cmd.Parameters.AddWithValue(name);
+            cmd.Parameters.AddWithValue("@name", name);
+        
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
                 {
-                    caseTypes.Add(reader.GetString(reader.GetOrdinal("text")));
+                    caseTypesList.Add(new
+                    {
+                        caseId = reader.GetInt32(0),
+                        caseType = reader.GetString(1)
+                    });
+
                 }
-                Console.WriteLine("Queries");
-                return JsonSerializer.Serialize(caseTypes, new JsonSerializerOptions {WriteIndented = true});
             }
-            
         }
+        return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
 }
 

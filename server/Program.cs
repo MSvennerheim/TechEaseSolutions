@@ -30,15 +30,15 @@ app.MapGet("/", () => "Hello World!");
 
 app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
 {
-    var companyDetails = await queries.getCompanyName(company);
-    
-    Console.WriteLine("Program");
+    Console.WriteLine(company);
+    var companyDetails = await queries.GetCompanyName(company);
+    Console.WriteLine(companyDetails);
     return companyDetails;
 });
 
 
 // Lägger till en login endpoint
-app.MapPost("/login", async (HttpContext context) =>
+app.MapPost("/api/login", async (HttpContext context) =>
 {
     try 
     {
@@ -74,7 +74,7 @@ app.MapPost("/login", async (HttpContext context) =>
     }
 });
 
-app.MapPost("/form", async (HttpContext context) =>
+app.MapPost("/api/form", async (HttpContext context) =>
 {
     try
     {
