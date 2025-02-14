@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using System.Collections.Generic;
+using server.Properties;
 
 [ApiController]
 [Route("api/casetypes")]
@@ -14,31 +15,39 @@ public class CasetypesController : ControllerBase
     }
 
     [HttpGet]
-public IActionResult GetCasetypes([FromQuery] int companyId)
-{
-    var casetypes = new List<object>();
-    using (var conn = _db.Connection().CreateConnection())
+    public IActionResult GetCasetypes([FromQuery] int companyId)
     {
-        conn.Open();
-        using (var cmd = new NpgsqlCommand("SELECT id, text FROM casetypes WHERE company = @companyId", conn))
+        var casetypes = new List<object>();
+
+        using (var conn = _db.GetConnection())
         {
-            cmd.Parameters.AddWithValue("@companyId", companyId);
-            using (var reader = cmd.ExecuteReader())
+            conn.Open();
+            using (var cmd = new NpgsqlCommand("SELECT id, text FROM casetypes WHERE company = @companyId", conn))
             {
-                while (reader.Read())
+                cmd.Parameters.AddWithValue("@companyId", companyId);
+
+                using (var reader = cmd.ExecuteReader())
                 {
-                    casetypes.Add(new { id = reader.GetInt32(0), text = reader.GetString(1) });
+                    while (reader.Read())
+                    {
+                        casetypes.Add(new { id = reader.GetInt32(0), text = reader.GetString(1) });
+                    }
                 }
             }
         }
+
+        return Ok(casetypes);
     }
-    return Ok(casetypes);
-}
 
     [HttpPut]
     public IActionResult UpdateCasetype([FromBody] List<CaseTypeUpdate> updates)
     {
-        using (var conn = _db.Connection().CreateConnection())
+        if (updates == null || updates.Count == 0)
+        {
+            return BadRequest("No data received");
+        }
+
+        using (var conn = _db.GetConnection())
         {
             conn.Open();
             foreach (var update in updates)
@@ -47,11 +56,17 @@ public IActionResult GetCasetypes([FromQuery] int companyId)
                 {
                     cmd.Parameters.AddWithValue("@text", update.Text);
                     cmd.Parameters.AddWithValue("@id", update.Id);
-                    cmd.ExecuteNonQuery();
+
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    if (rowsAffected == 0)
+                    {
+                        return NotFound($"No case found with ID {update.Id}");
+                    }
                 }
             }
         }
-        return Ok(new { message = "Ämnen uppdaterade" });
+
+        return Ok("Cases updated");
     }
 }
 
