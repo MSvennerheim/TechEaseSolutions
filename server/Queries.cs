@@ -78,8 +78,9 @@ public class Queries
         // first get id for user from email and company from name, create timestamp and write to db.
         // if sender is csrep also return mailadress for sending to that ticket has been updated 
         
-        int senderId;
-        int companyId;
+        int senderId = 0; // just to get it to run, make a check so these are not 0 before writing to db
+        int companyId = 0; 
+        
         const string getId = @"SELECT users.id, c.id
                                     FROM users
                                     JOIN public.companies c on users.company = c.id
@@ -164,7 +165,7 @@ public class Queries
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     Email = reader.GetString(reader.GetOrdinal("email")),
                     Company = reader.GetInt32(reader.GetOrdinal("company")),
-                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("customer-service-user")),
+                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
                     IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
                 };
                 Console.WriteLine($"User from DB: {JsonSerializer.Serialize(user)}");
