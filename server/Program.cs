@@ -4,6 +4,8 @@ using System.Text.Json;
 Database database = new();
 var db = database.Connection();
 Queries queries = new(db);
+Mail newmail = new Mail();
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +34,26 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
     var chatHistory = await queries.GetChatHistory(chatId);
     return chatHistory;
 });
+
+app.MapGet("/api/ChatResponse/{chatResponse}", async (string chatResponse) =>
+{
+    
+    // deserialize json before putting into WriteChatToDB
+    // (needed here since we need chatId to be pushed into email confirmation)
+
+    ChatData? chatData = JsonSerializer.Deserialize<ChatData>(chatResponse, new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    });
+    
+    string emaiConfirmationAdress = await queries.WriteChatToDB(chatData.Message, chatData.Email,  chatData.ChatId, chatData.CaseType, chatData.Company, chatData.Csrep);
+    if (emaiConfirmationAdress != "")
+    {
+        await newmail.emailConfirmationOnAnswer(emaiConfirmationAdress, chatData.ChatId);
+    }
+    
+});
+
 
 app.MapGet("/api/arbetarsida/{company}", async (string company) =>
 {
@@ -75,7 +97,6 @@ app.MapPost("/login", async (HttpContext context) =>
         return Results.BadRequest(new { message = ex.Message });
     }
 });
-Mail newmail = new Mail();
 //newmail.generateNewIssue();
 
 app.Run();
@@ -86,3 +107,14 @@ public class LoginRequest
     public string Email { get; set; }
     public string Password { get; set; }
 }
+
+public class ChatData
+{
+    public string Message { get; set; }
+    public string Email { get; set; }
+    public int ChatId { get; set; }
+    public int CaseType { get; set; }
+    public string Company { get; set; }
+    public bool Csrep { get; set; }
+}
+

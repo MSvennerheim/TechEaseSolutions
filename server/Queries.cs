@@ -135,6 +135,7 @@ public class Queries
             }
             return customerEmail;
         }
+        // return empty string if we don't need to send confirmation
         return "";
     }
     
