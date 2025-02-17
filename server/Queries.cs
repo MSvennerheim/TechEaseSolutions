@@ -111,7 +111,6 @@ public class Queries
                 {
                     ticket.companyId = reader.GetInt32(1);
                 }
-                
             }
         }
     }
@@ -133,7 +132,6 @@ public class Queries
                         caseId = reader.GetInt32(0),
                         caseType = reader.GetString(1)
                     });
-
                 }
             }
         }

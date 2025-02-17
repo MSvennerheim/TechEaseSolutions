@@ -6,22 +6,6 @@ var db = database.Connection();
 Queries queries = new(db);
 
 var builder = WebApplication.CreateBuilder(args);
-/*
- 
- app.MapGet("/Chat/{chatId:int}", async (int chatId) =>
-{
-    var chatHistory = await queries.GetChatHistory(chatId);
-    return chatHistory;
-});
-
-app.MapGet("/arbetarsida/{company}", async (string company) =>
-{
-    var chats = await queries.GetChatsForCsRep(company);
-    return chats;
-});
-
- */
-
 var app = builder.Build();
 
 
