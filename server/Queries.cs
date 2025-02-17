@@ -73,14 +73,41 @@ public class Queries
         return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
     }
 
-    public async Task<string> WriteChatToDB(string message, string email, int chatId, int caseType, string company, bool csrep)
+    public async Task<string> WriteChatToDB(ChatData chatData)
     {
         // first get id for user from email and company from name, create timestamp and write to db.
         // if sender is csrep also return mailadress for sending to that ticket has been updated 
         
-        int senderId = 0; // just to get it to run, make a check so these are not 0 before writing to db
-        int companyId = 0; 
+        // TODO: rewrite so that check for caseid is from db instead of from frontend....
         
+        int senderId = 0; // just to get it to run, make a check so these are not 0 before writing to db
+        int companyId = 0;
+        int caseType = 0;
+        string company = "";
+        
+        // TODO: rewrite these following queries in a nicer way...
+
+        const string getChatdataInfo = @"SELECT casetype, name
+                                            FROM messages
+                                            JOIN companies ON messages.company = companies.id
+                                            WHERE chatid = @chatId
+                                            LIMIT 1";
+
+        await using (var cmd = _db.CreateCommand(getChatdataInfo))
+        {
+            cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
+            await using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    caseType = reader.GetInt32(0);
+                    company = reader.GetString(1);
+                }
+            }
+        }
+            
+            
+            
         const string getId = @"SELECT users.id, c.id
                                     FROM users
                                     JOIN public.companies c on users.company = c.id
@@ -88,7 +115,7 @@ public class Queries
                                     AND c.name = @company";
         await using (var cmd = _db.CreateCommand(getId))
         {
-            cmd.Parameters.AddWithValue("@email", email);
+            cmd.Parameters.AddWithValue("@email", chatData.email);
             cmd.Parameters.AddWithValue("@company", company);
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
@@ -105,20 +132,20 @@ public class Queries
                                         values (@message, @companyId, @casetype, @senderId, @chatId, @currentTime )";
         await using (var cmd = _db.CreateCommand(writeToDB))
         {
-            cmd.Parameters.AddWithValue("@message", message);
+            cmd.Parameters.AddWithValue("@message", chatData.message);
             cmd.Parameters.AddWithValue("@companyId", companyId);
             cmd.Parameters.AddWithValue("@casetype", caseType);
             cmd.Parameters.AddWithValue("@senderId", senderId);
-            cmd.Parameters.AddWithValue("@chatId", chatId);
+            cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
             cmd.Parameters.AddWithValue("@currentTime", currentTime);
             await using var reader = await cmd.ExecuteReaderAsync();
         }
         
         // if sender is csrep get email for customer and send them a confirmation
 
-        if (csrep)
+        if (chatData.csrep)
         {
-            string customerEmail;
+            string customerEmail = "";
             const string getCustomerMail = @"SELECT u.email
                                                 from messages
                                                 JOIN public.users u on u.id = messages.sender
@@ -128,10 +155,17 @@ public class Queries
             
             await using (var cmd = _db.CreateCommand(getCustomerMail))
             {
-                cmd.Parameters.AddWithValue("@chatId", chatId);
+                cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    customerEmail = reader.GetString(0);
+                    if (await reader.ReadAsync())
+                    {
+                        customerEmail = reader.GetString(0);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Couldnt find customer mail, chatid: " + chatData.chatId);
+                    }
                 }
             }
             return customerEmail;

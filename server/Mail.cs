@@ -70,15 +70,25 @@ public class Mail
         MimeMessage mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress("test", "kundtjanstssontest@gmail.com"));
         
-        mimeMessage.To.Add(MailboxAddress.Parse(email));
+        mimeMessage.To.Add(MailboxAddress.Parse("max.svennerheim@gmail.com"));
+        //mimeMessage.To.Add(MailboxAddress.Parse(email));
         
         mimeMessage.Subject = "Ditt ärende har uppdaterats";
             
-        var builder = new BodyBuilder();
+        var bodyBuilder = new BodyBuilder();
 
-        builder.HtmlBody = $@"<p>Ditt ärende har uppdaterats</p> </br>
-                            <a href=´http://localhost:5173/Chat/{chatid}´ >klicka här för att se ditt ärende</a>";
+        // add hyperlink to chat
+        bodyBuilder.HtmlBody = $@"
+        <html>
+        <body>
+            <h2>Ditt ärende har uppdaterats!</h2>
+            <p>Ditt ärende har fått ett svar, klicka på länken HÄR #{chatid}.</p>
+            <p>Svara inte på detta mejlet, det är autogenererat</p>
+        </body>
+        </html>";
         
+        mimeMessage.Body = bodyBuilder.ToMessageBody();
+
         SmtpClient client = new SmtpClient();
         try
         {

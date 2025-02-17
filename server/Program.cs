@@ -65,21 +65,23 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
     return chatHistory;
 });
 
-app.MapGet("/api/ChatResponse/{chatResponse}", async (string chatResponse) =>
+app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
-    
+
+    var chatId = int.Parse(context.Request.RouteValues["chatId"]?.ToString());
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var chatData = JsonSerializer.Deserialize<ChatData>(body);
+    chatData.chatId = chatId;
     // deserialize json before putting into WriteChatToDB
     // (needed here since chatId is needed for emailConfirmationOnAnswer)
 
-    ChatData? chatData = JsonSerializer.Deserialize<ChatData>(chatResponse, new JsonSerializerOptions
+    string emailConfirmationAdress = await queries.WriteChatToDB(chatData);
+    if (emailConfirmationAdress != "")
     {
-        PropertyNameCaseInsensitive = true
-    });
-    
-    string emaiConfirmationAdress = await queries.WriteChatToDB(chatData.Message, chatData.Email,  chatData.ChatId, chatData.CaseType, chatData.Company, chatData.Csrep);
-    if (emaiConfirmationAdress != "")
-    {
-        await newmail.emailConfirmationOnAnswer(emaiConfirmationAdress, chatData.ChatId);
+        // hopefully this'll work, but first get in the response to db
+        await newmail.emailConfirmationOnAnswer(emailConfirmationAdress, chatData.chatId);
+        Console.WriteLine("Email sent placeholder to email: " + emailConfirmationAdress);
     }
     
 });
@@ -231,11 +233,11 @@ public class LoginRequest
 
 public class ChatData
 {
-    public string Message { get; set; }
-    public string Email { get; set; }
-    public int ChatId { get; set; }
-    public int CaseType { get; set; }
-    public string Company { get; set; }
-    public bool Csrep { get; set; }
+    public string message { get; set; }
+    public string email { get; set; }
+    public int chatId { get; set; }
+    // public int CaseType { get; set; }
+    // public string Company { get; set; }
+    public bool csrep { get; set; }
 }
 
