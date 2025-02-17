@@ -4,6 +4,7 @@ import Login from './Pages/LoginUI.jsx';
 import Adminsida from "./Pages/Adminsida.jsx";
 import Arbetarsida from "./Pages/Arbetarsida.jsx";
 import KontaktaOss from "./Pages/Kontaktaoss.jsx";
+import Arbetarsida from "./Pages/Arbetarsida.jsx";
 import Confirmationsida from "./Pages/confirmationsida.jsx";
 import Redigeramall from "./Pages/redigeramall.jsx";
 import Redigeramedarbetare from "./Pages/redigeramedarbetare.jsx";
@@ -25,10 +26,7 @@ export default function App() {
         <Route path="/arbetarsida" element={<Arbetarsida />} />
 
         <Route path="/kontaktaoss" element={<KontaktaOss />} />
-        {/* <Route path="/arbetarsida/:company" element={<Arbetarsida />} /> */}
         {/* Skyddad routes */}
-        {/* <Route path="/arbetarsida" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Adminsida /></ProtectedRoute>} /> */}
         <Route path="/arbetarsida/:company" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Adminsida /></ProtectedRoute>} />
         {/* vet inte rikigt än Routes */}
@@ -40,3 +38,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+

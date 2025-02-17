@@ -8,7 +8,9 @@ function LoginUI() {
   const { email, setEmail, password, setPassword, error, handleSubmit } = useLogin();
 
   return (
-    <div className='d-flex justify-content-center align-items-center bg-primary vh-100'>
+   <div
+      className="d-flex justify-content-center align-items-center bg-primary"
+      style={{ minHeight: '100vh', width: '100vw' }}>
       <div className='bg-white p-4 rounded shadow-sm' style={{ width: '400px' }}>
         <h2 className='text-center mb-4'>Login</h2>
 
