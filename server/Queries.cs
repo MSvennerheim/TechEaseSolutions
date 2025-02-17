@@ -177,11 +177,32 @@ public class Queries
     }
     public async Task customerTempUser(Ticket ticket)
     {
-        //Make sure that you can't have duplicate emails in the database.
+        //Make sure that you can't have duplicate emails on the same company id in the database.
+        await using (var checkCmd =
+                     _db.CreateCommand("SELECT id, email, company FROM users where email = @email AND company = @company"))
+        {
+            checkCmd.Parameters.AddWithValue("@email", ticket.email);
+            checkCmd.Parameters.AddWithValue("@company", ticket.companyId);
+            await using (var reader = await checkCmd.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    if (reader.HasRows) 
+                    { 
+                        ticket.id = reader.GetInt32(reader.GetOrdinal("id")); 
+                        return;
+                    }
+                }
+
+            }
+        }
         
-        await using (var cmd = _db.CreateCommand("INSERT INTO users (email) VALUES ($1) RETURNING id;"))
+        await using (var cmd = _db.CreateCommand("INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4) RETURNING id;"))
         {
             cmd.Parameters.AddWithValue(ticket.email);
+            cmd.Parameters.AddWithValue(false);
+            cmd.Parameters.AddWithValue(false);
+            cmd.Parameters.AddWithValue(ticket.companyId);
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
                 if (await reader.ReadAsync())
