@@ -17,6 +17,9 @@ public class Database
         string database = Environment.GetEnvironmentVariable("PGDATABASE") ?? "postgres";
 
         _connectionString = $"Host={host};Port={port};Username={user};Password={password};Database={database}";
+        
+        Console.WriteLine($"✅ Ansluter till databasen med connection string: {_connectionString}");
+
     }
 
     public NpgsqlConnection GetConnection()

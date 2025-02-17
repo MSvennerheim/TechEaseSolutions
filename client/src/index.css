@@ -230,3 +230,8 @@ body {
     border-radius: 5px;
     font-size: 16px;
 }
+
+#topicinputfield{
+    font-family: "Roboto Mono", serif;
+    margin: 5px;
+}

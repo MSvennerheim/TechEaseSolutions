@@ -23,49 +23,93 @@ function CaseEditor() {
 
     // 🟢 Lägg till ett nytt ämne i UI (ej i databasen än)
     const handleAddTopic = () => {
-        if (newTopic.trim() === "") return; // Förhindra tomma ämnen
-        setTopics([...topics, { id: null, text: newTopic, company: parseInt(companyId) }]); // 🟢 Lägg till company ID
+        const trimmedTopic = newTopic.trim();
+        if (trimmedTopic === "") return; // Förhindra tomma ämnen
+        
+        // Kontrollera om ämnet redan finns (case-insensitive)
+        const topicExists = topics.some(t => 
+            t.text.trim().toLowerCase() === trimmedTopic.toLowerCase()
+        );
+        
+        if (topicExists) {
+            setError("Detta ämne finns redan!");
+            return;
+        }
+        
+        setTopics([...topics, { id: null, text: trimmedTopic, company: parseInt(companyId) }]);
         setNewTopic("");
+        setError(null); // Rensa eventuella tidigare fel
     };
 
     // 🟢 Spara alla ändringar (uppdateringar + nya)
-    const handleSave = () => {
-        const newTopics = topics.filter(t => t.id === null); // 🆕 Filtrera nya cases
-        const existingTopics = topics.filter(t => t.id !== null); // 🔄 Befintliga cases
+    const handleSave = async () => {
+        const newTopics = topics.filter(t => t.id === null);
+        const existingTopics = topics.filter(t => t.id !== null);
 
-        console.log("📤 Skickar PUT för uppdatering:", existingTopics);
-        console.log("📤 Skickar POST för nya ämnen:", newTopics);
+        try {
+            // 🟢 Skicka PUT för uppdateringar
+            if (existingTopics.length > 0) {
+                const updateResponse = await fetch("http://localhost:5000/api/casetypes", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(existingTopics),
+                });
+                
+                if (!updateResponse.ok) {
+                    throw new Error('Fel vid uppdatering av befintliga ämnen');
+                }
+                
+                const updatedData = await updateResponse.json();
+                console.log("✅ Uppdaterade ämnen:", updatedData);
+            }
 
-        // 🟢 Skicka PUT för uppdateringar
-        if (existingTopics.length > 0) {
-            fetch("http://localhost:5000/api/casetypes", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(existingTopics),
-            })
-            .then(response => response.json())
-            .then(data => console.log("✅ Uppdaterade ämnen:", data))
-            .catch(error => console.error("❌ Fel vid uppdatering:", error));
+            // 🆕 Skicka POST för nya ämnen och uppdatera UI
+            const updatedTopics = [...existingTopics];
+            
+            for (const topic of newTopics) {
+                const requestData = {
+                    text: topic.text.trim(),
+                    company: parseInt(topic.company)
+                };
+                
+                console.log("🔍 Försöker skicka data:", JSON.stringify(requestData, null, 2));
+                
+                try {
+                    const response = await fetch("http://localhost:5000/api/casetypes", {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(requestData),
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error("❌ Server svarade med:", response.status, errorText);
+                        throw new Error(`Fel vid tillägg av nytt ämne: ${errorText}`);
+                    }
+
+                    const newData = await response.json();
+                    console.log("✅ Nytt ämne tillagt:", newData);
+                    
+                    // Uppdatera topics-listan med det nya ID:t från servern
+                    updatedTopics.push({
+                        ...topic,
+                        id: newData.id
+                    });
+                } catch (error) {
+                    console.error("❌ Fel vid anrop:", error);
+                    throw error;
+                }
+            }
+
+            // Uppdatera hela topics-listan med de nya ID:na
+            setTopics(updatedTopics);
+            alert("Ämnen uppdaterade!");
+        } catch (error) {
+            console.error("❌ Fel vid sparande:", error);
+            setError(error.message);
         }
-
-        // 🆕 Skicka POST för nya cases
-        newTopics.forEach(topic => {
-            console.log("🟢 Försöker lägga till nytt ämne:", topic);
-
-            fetch("http://localhost:5000/api/casetypes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(topic),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("✅ Nytt case tillagt:", data);
-                topic.id = data.id; // 🆕 Uppdatera ID i frontend
-            })
-            .catch(error => console.error("❌ Fel vid tillägg:", error));
-        });
-
-        alert("Ämnen uppdaterade!");
     };
 
     return (
@@ -86,7 +130,7 @@ function CaseEditor() {
                 <ul>
                     {topics.map((t, index) => (
                         <li key={index}>
-                            <input 
+                            <input id="topicinputfield"
                                 type="text" 
                                 value={t.text} 
                                 onChange={(e) => {

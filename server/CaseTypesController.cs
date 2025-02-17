@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using server.Properties;  // ✅ Se till att detta är rätt namespace
+using System.ComponentModel.DataAnnotations;  // Lägg till denna using
 
 [ApiController]
 [Route("api/casetypes")]
@@ -93,28 +94,37 @@ public class CaseTypesController : ControllerBase
         }
     }
 
-    // 🆕 Lägg till nya casetypes i databasen (flyttad utanför UpdateCasetype)
-    [HttpPost]
-    public IActionResult AddCasetype([FromBody] CaseTypeUpdate newCasetype)
+    // 🟢 Klass för att hantera casetypes
+    public class CaseTypeRequest
     {
-        Console.WriteLine($"🔍 Mottagen POST-request: '{newCasetype.Text}'");
+        [Required(ErrorMessage = "NewCasetype är obligatoriskt")]
+        public CaseTypeUpdate NewCasetype { get; set; } = null!;
+    }
 
-        if (string.IsNullOrWhiteSpace(newCasetype.Text))
+    // Ny POST-metod med förenklad struktur
+    [HttpPost]
+    public IActionResult AddCasetype([FromBody] NewCaseTypeRequest request)
+    {
+        try 
         {
-            return BadRequest(new { error = "Text får inte vara tom" });
-        }
+            Console.WriteLine($"🔍 Mottagen POST-request: {System.Text.Json.JsonSerializer.Serialize(request)}");
 
-        try
-        {
-            using (var conn = _db.GetConnection())  // 🟢 Anslut till databasen
+            if (string.IsNullOrWhiteSpace(request?.Text))
+            {
+                return BadRequest(new { error = "Text får inte vara tom" });
+            }
+
+            using (var conn = _db.GetConnection())
             {
                 conn.Open();
-                using (var cmd = new NpgsqlCommand("INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id", conn)) // 🟢 Lägg till nytt case
+                using (var cmd = new NpgsqlCommand(
+                    "INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id", 
+                    conn))
                 {
-                    cmd.Parameters.AddWithValue("@text", newCasetype.Text);
-                    cmd.Parameters.AddWithValue("@company", newCasetype.Company);
-                    int newId = (int)cmd.ExecuteScalar();  // 🟢 Hämta ID för den nya posten
+                    cmd.Parameters.AddWithValue("@text", request.Text);
+                    cmd.Parameters.AddWithValue("@company", request.Company);
                     
+                    var newId = (int)cmd.ExecuteScalar();
                     Console.WriteLine($"✅ Nytt ämne sparat med ID {newId}");
                     return Ok(new { id = newId, message = "Casetype added" });
                 }
@@ -131,7 +141,18 @@ public class CaseTypesController : ControllerBase
 // 🟢 Klass för att hantera casetypes
 public class CaseTypeUpdate
 {
-    public int Id { get; set; }
-    public string Text { get; set; }
-    public int Company { get; set; }  // 🆕 Se till att Company är med!
+    public int Id { get; set; }  // Inte nullable för uppdateringar
+    public string Text { get; set; } = string.Empty;
+    public int Company { get; set; }
+
+    public override string ToString()
+    {
+        return $"CaseTypeUpdate(Id={Id}, Text='{Text}', Company={Company})";
+    }
+}
+
+public class NewCaseTypeRequest
+{
+    public string Text { get; set; } = string.Empty;
+    public int Company { get; set; }
 }
