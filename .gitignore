@@ -506,3 +506,7 @@ dist-ssr
 *.njsproj
 
 *.sw?
+
+.env
+.env.local
+.env.*.local

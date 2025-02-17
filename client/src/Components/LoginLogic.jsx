@@ -1,9 +1,14 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
-export function useLogin() { // här definerar vi variablerna som ska användas i komponeten
+
+export function useLogin() {
+
+  // komponenter för att hantera inloggningsfält och felmeddelande
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,7 +20,7 @@ export function useLogin() { // här definerar vi variablerna som ska användas 
     }
 
     try {
-      const response = await fetch('/api/login', { // Här skickas förfrågan till servern med anvöndarens mail och lösenord 
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,19 +31,27 @@ export function useLogin() { // här definerar vi variablerna som ska användas 
         }),
       });
 
+      const data = await response.json().catch(() => null); // Hantera json fel här
+      console.log('Login Response:', data); // Logga svaret från servern
 
-      
-      const data = await response.json(); //Här hämtar vi svaret från servern som är en token. Om det går bra så redirectar vi användaren till dashboard.
+      if (!data) {
+        setError('An unexpected error occurred. Please try again.');
+        return;
+      }
 
       if (response.ok) {
-        localStorage.setItem('token', data.token); // lägger till en token i localstorage så att inforamationen kan sparas
-        window.location.href = '/arbetarsida'; // skickar dig till arbetarsidan.
+        console.log('Login Successful. User:', data.user); // logga användaren som loggat in
+        if (data.user.isAdmin) {
+          navigate('/admin');
+        } else {
+          navigate('/arbetarsida');
+        }
       } else {
-        setError(data.message || 'Login failed');
+        setError(data.message || 'Login failed. Please check your credentials.');
       }
-    } catch (err) {
-      setError('An error occurred during login');
-      console.error('Login error:', err);
+    } catch (error) {
+      setError('An error occurred during login. Please try again.');
+      console.error('Login error:', error);
     }
   };
 
@@ -48,6 +61,6 @@ export function useLogin() { // här definerar vi variablerna som ska användas 
     password,
     setPassword,
     error,
-    handleSubmit
+    handleSubmit,
   };
 }

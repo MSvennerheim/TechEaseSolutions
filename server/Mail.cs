@@ -63,4 +63,42 @@ public class Mail
             }
         }
     }
+
+    public async Task<bool> emailConfirmationOnAnswer(string email, int chatid)
+    {
+
+        MimeMessage mimeMessage = new MimeMessage();
+        mimeMessage.From.Add(new MailboxAddress("test", "kundtjanstssontest@gmail.com"));
+        
+        mimeMessage.To.Add(MailboxAddress.Parse(email));
+        
+        mimeMessage.Subject = "Ditt ärende har uppdaterats";
+            
+        var builder = new BodyBuilder();
+
+        builder.HtmlBody = $@"<p>Ditt ärende har uppdaterats</p> </br>
+                            <a href=´http://localhost:5173/Chat/{chatid}´ >klicka här för att se ditt ärende</a>";
+        
+        SmtpClient client = new SmtpClient();
+        try
+        {
+            client.Connect("smtp.gmail.com", 465, true);
+            client.Authenticate("kundtjanstssontest@gmail.com", "iitp gitd mlha yvvp");
+            client.Send(mimeMessage);
+                
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+        finally
+        {
+            client.Disconnect(true);
+            client.Dispose();
+        }
+        
+        return true;
+    }
+    
 }

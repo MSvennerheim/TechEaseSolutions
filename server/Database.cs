@@ -23,13 +23,11 @@ public class Database
 
     private NpgsqlDataSource _connection;
 
-    // metod som hämtar anslutningen
     public NpgsqlDataSource Connection()
     {
         return _connection;
     }
 
-    // koppla upp till databasen (i constructorn)
     public Database()
     {
         Env.Load();
