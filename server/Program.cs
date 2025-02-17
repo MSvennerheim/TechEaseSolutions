@@ -218,16 +218,6 @@ app.MapPost("/api/form", async (HttpContext context) =>
     return Results.BadRequest();
 });
 
-
-
-
-
-
-
-
-
-
-
 app.Run();
 Console.ReadLine();
 
