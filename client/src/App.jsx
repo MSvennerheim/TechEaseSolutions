@@ -39,12 +39,3 @@ export default function App() {
   );
 }
 
-{/* Public Routes */ }
-
-{/* Skyddad routes */ }
-
-
-
-
-{/* vet inte rikigt än Routes */ }
-<Route path="Chat/:chatId" element={<ChatHistory />} />
