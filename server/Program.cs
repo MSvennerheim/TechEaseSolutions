@@ -50,6 +50,15 @@ app.UseMiddleware<AuthMiddleware>();  // Detta är min egna middleware för aute
 
 app.MapGet("/", () => "Hello World!");
 
+app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
+{
+    // Console.WriteLine(company);
+    var companyDetails = await queries.GetCompanyName(company);
+    
+    // Console.WriteLine(companyDetails);
+    return companyDetails;
+});
+
 app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
 {
     var chatHistory = await queries.GetChatHistory(chatId);
@@ -174,7 +183,43 @@ app.MapGet("/api/check-session", (HttpContext context) =>
     });
 });
 
+app.MapPost("/api/form", async (HttpContext context) =>
+{
+    try
+    {
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var ticketInformation = JsonSerializer.Deserialize<Ticket>(body);
+        
+        
+        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) || string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
+        {
+            return Results.BadRequest(new { message = "All fields have to be entered" });
+        }
+        
+        if (ticketInformation != null)
+        {
+            //Populate the Ticket class further and push it to DB
+            queries.customerTempUser(ticketInformation);
+            await queries.CompanyName(ticketInformation);
+            await queries.postNewTicket(ticketInformation);
+            
+            // After successfull Insert, send an email the user wrote in the form
+
+            //newmail.generateNewIssue(ticketInformation);
+            
+            return Results.Ok();
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+    }
+    return Results.BadRequest();
+});
+
 app.Run();
+Console.ReadLine();
 
 
 // En klass för att kunna representera inloggningsförfrågningar

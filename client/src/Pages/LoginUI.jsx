@@ -15,7 +15,7 @@ function LoginUI() {
         <h2 className='text-center mb-4'>Login</h2>
 
         {error && <div className='alert alert-danger' role='alert'>{error}</div>}
-
+        
         <form onSubmit={handleSubmit}>
           <div className='mb-3'>
             <label htmlFor='email' className='form-label'>Email</label>
