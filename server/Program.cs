@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using server;
 using server.Properties;
 using System.Text.Json;
-
+using Npgsql;
 
 Database database = new();
 var db = database.Connection();
@@ -34,17 +34,42 @@ Console.ReadLine();
 void ConfigureServices(WebApplicationBuilder builder)
 {
     
+    var database = new Database();
+    var dataSource = database.Connection();
+
+    //
+    builder.Services.AddSingleton<NpgsqlDataSource>(_ => dataSource);
+
+   //Fick lägga till cors för att själva den som öppnar sitt ärende från mail ska kunna see och skriva tillbaka förhoppingsvis kan jag hitta ett annat sätt senare
+    builder.Services.AddCors();
+
     
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowFrontend", policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+    });
+
+   // Behövde lägga till addScoped<T>() eftersom att Queries hanterar databasförfrågningarna. 
+   // Vad gör den? Om en användare gör en förfrågan så skapas en instans av queries och används under hela förfrågningen och sedan när frågan är klar så förstörs objeketet automatiskt
+    builder.Services.AddScoped<Queries>();
     
-    
+    // en enda instans av npgsqlDatasource skapas vid app start och återanvänds under hela applikationen
+    // här säger den åt ASP.net core att alltid använda samma instans av datassource när en tjänst behöver npgsqlDatasource
+    builder.Services.AddSingleton<NpgsqlDataSource>(_ => dataSource);
+
     // här konfigureras sessionshantering
     builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
     builder.Services.AddSession(options =>
     {
-        options.IdleTimeout = TimeSpan.FromMinutes(60); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
+        options.IdleTimeout = TimeSpan.FromMinutes(60); //om du är inaktiv så kommer du bli utloggad efter en vis tid.
         options.Cookie.HttpOnly = true; // Skyddar så att cookien inte kan nås via js
         options.Cookie.IsEssential = true; // Cookien krävs för att sessionen ska kunna fungera
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // cookien skickas bara via https
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // cookien skickas bara via http
         options.Cookie.SameSite = SameSiteMode.Strict; // förhindrar att cookien skickas vid externa förfrågningar
     });
 
@@ -65,6 +90,7 @@ void ConfigureServices(WebApplicationBuilder builder)
 void ConfigureMiddleware(WebApplication app)
 {
     // Middleware-pipline vilket är en sekvens av middleware-komponenter som hanterar http-förfrågningar och svar
+    app.UseCors("AllowFrontend");
     app.UseSession();  //aktiverar Sessionshanteringen
     app.UseRouting(); // aktiverar routing för API-endpoints
     app.UseAuthentication(); // Aktiverar autentisering
@@ -116,7 +142,7 @@ void ConfigureCaseRoutes(WebApplication app)
                         Message = reader.GetString(1),
                         Company = reader.GetInt32(2),
                         CaseType = reader.GetInt32(3),
-                        Sender = reader.GetString(4),
+                        Sender = reader.GetInt32(4),
                         Timestamp = reader.GetDateTime(5)
                     };
                     return Results.Ok(caseData);
@@ -147,7 +173,7 @@ void ConfigureCaseRoutes(WebApplication app)
             await queries.customerTempUser(ticket);
             await queries.postNewTicket(ticket);
 
-            // Generera token genom att använda redan exiserande metod
+            // Generera token genom att använda redan existerande metod
             var token = await queries.GenerateAndStoreToken(ticket.chatid, ticket.email);
 
             // skicka token länken

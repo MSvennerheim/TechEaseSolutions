@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+//Skapade denna pagen för vi behöver en sida som visar information om ett specifikt ärende baserat på dess unika token. 
+// Dessutom måste vi see så att man kan gå in sitt ärende och se alla detaljer. ska senare kunna skicka meddelanden
+//och visa dem i detta fönster.
 
+
+
+
+// Här har vi ett tillstånd  där vi hämtar token från urlen och case data so används för att lagra ärendedata.
 const CaseView = () => {
   const { token } = useParams();
   const [caseData, setCaseData] = useState(null);
   const [error, setError] = useState("");
 
+
+
+
   useEffect(() => {
     const fetchCase = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/case/${token}`); // Ensure the correct URL
+        const response = await fetch(`http://localhost:5000/case/${token}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch case details");
+          throw new Error(`Failed to fetch case details: ${response.statusText}`);
         }
-        const data = await response.json(); // Parse the response as JSON
+        const data = await response.json();
         setCaseData(data);
       } catch (error) {
         console.error("Error fetching case details:", error);

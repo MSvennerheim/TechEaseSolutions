@@ -31,9 +31,9 @@ public class Queries
         await using (var cmd = _db.CreateCommand(insertTokenSql))
         {
             cmd.Parameters.AddWithValue("@token", token);
-            cmd.Parameters.AddWithValue("@case_id", chatId); // Match SQL parameter name
+            cmd.Parameters.AddWithValue("@case_id", chatId); 
             cmd.Parameters.AddWithValue("@email", email);
-            cmd.Parameters.AddWithValue("@expires_at", DateTime.UtcNow.AddHours(24)); // Match SQL parameter name
+            cmd.Parameters.AddWithValue("@expires_at", DateTime.UtcNow.AddHours(24)); 
             await cmd.ExecuteNonQueryAsync();
         }
         return token;
@@ -180,6 +180,8 @@ FROM messages JOIN users ON messages.sender = users.id  JOIN companies ON messag
         // return empty string if we don't need to send confirmation
         return "";
     }
+    
+    
     
     
     public async Task<User?> ValidateUser(string email, string password)

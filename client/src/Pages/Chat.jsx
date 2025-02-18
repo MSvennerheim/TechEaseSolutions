@@ -13,7 +13,7 @@ const ChatHistory = () => {
           throw new Error("Failed to fetch chat history");
         }
         const responseData = await response.json();
-        console.log("Chat History Response:", responseData); // Log the response
+        console.log("Chat History Response:", responseData); 
         setData(responseData);
       } catch (error) {
         console.error("Error fetching chat history:", error);

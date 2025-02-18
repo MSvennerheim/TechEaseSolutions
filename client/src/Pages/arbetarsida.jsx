@@ -10,10 +10,10 @@ const Arbetarsida = () => {
       try {
         const response = await fetch(`/api/arbetarsida/${company}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch chats");
+          throw new Error(`Failed to fetch chats: ${response.statusText}`);
         }
         const responseData = await response.json();
-        console.log("Chats Response:", responseData); // Logga svaret
+        console.log("Chats Response:", responseData);
         setData(responseData);
       } catch (error) {
         console.error("Error fetching chats:", error);

@@ -24,8 +24,8 @@ public class Mail
     <html>
     <body>
         <h2>Åtkomst till ditt ärende</h2>
-        <p>Klicka på länken nedan för att se och hantera ditt ärende:</p>
-        <p><a href='http://localhost:5173/case/{token}'>Öppna ärende #{chatId}</a></p>
+        <p>Klicka på länken nedan för att se och få hjälp med ditt ärende:</p>
+        <p><a href='http://localhost:5173/case/{token}'>Öppna ärende här #{chatId}</a></p>
         <p>Svara inte på detta mejlet, det är autogenererat.</p>
     </body>
     </html>";
