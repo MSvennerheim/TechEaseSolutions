@@ -1,6 +1,3 @@
-using System.Text.Json;
-using MailKit.Security;
-using Microsoft.AspNetCore.Mvc;
 
 namespace server;
 using Npgsql;
@@ -13,6 +10,48 @@ public class Queries
     {
         _db = db;
     }
+    
+    
+    //Behövde lägga ett sätt att hämta databas anslutning efter som att jag ville använda sql i program.cs
+    public NpgsqlDataSource GetDbConnection()
+    {
+        return _db;
+    }
+    
+    
+    //Skapade en klass där en unik token skapas som då är en engångstoken som kan både användas som autentisering eller åtkomstkontroll. Faktiskt väldigt användbart
+    public async Task<string> GenerateAndStoreToken(int chatId, string email)
+    {
+        var token = Guid.NewGuid().ToString();
+
+        const string insertTokenSql =
+            @"INSERT INTO case_tokens (token, case_id, email, expires_at) 
+          VALUES (@token, @case_id, @email, @expires_at);";
+
+        await using (var cmd = _db.CreateCommand(insertTokenSql))
+        {
+            cmd.Parameters.AddWithValue("@token", token);
+            cmd.Parameters.AddWithValue("@case_id", chatId); // Match SQL parameter name
+            cmd.Parameters.AddWithValue("@email", email);
+            cmd.Parameters.AddWithValue("@expires_at", DateTime.UtcNow.AddHours(24)); // Match SQL parameter name
+            await cmd.ExecuteNonQueryAsync();
+        }
+        return token;
+    }
+
+    public async Task<bool> ValidateToken(string token)
+    {
+        const string sql = @"SELECT COUNT(*) FROM case_tokens WHERE token = @token AND expires_at > NOW();";
+
+        await using (var cmd = _db.CreateCommand(sql))
+        {
+            cmd.Parameters.AddWithValue("@token", token);
+            var result = await cmd.ExecuteScalarAsync(); // ExecuteScalarAsync returnerar ett object
+            return Convert.ToInt32(result) > 0; // Konvertera resultatet till int
+        }
+    }
+
+
 
     public async Task<string> GetChatHistory(int chat) {
         
@@ -43,34 +82,36 @@ public class Queries
     {
         var chats = new List<object>();
 
-        const string sql = @"
-            SELECT DISTINCT ON (chatid) chatid, message, email, timestamp, csrep
-            FROM messages
-            JOIN users ON messages.sender = users.id
-            JOIN companies ON messages.company = companies.id
-            WHERE companies.name = @company
-            ORDER BY chatid, timestamp DESC";
-        
-        
-        await using (var cmd = _db.CreateCommand(sql))
+        const string sql = @"SELECT DISTINCT ON (messages.chatid) messages.chatid,messages.message,users.email,messages.timestamp,COALESCE(users.csrep, false) as csrep
+FROM messages JOIN users ON messages.sender = users.id  JOIN companies ON messages.company = companies.id WHERE companies.name = @company ORDER BY messages.chatid, messages.timestamp DESC";
+    
+        try 
         {
-            cmd.Parameters.AddWithValue("@company", company);
-            await using (var reader = await cmd.ExecuteReaderAsync())
+            await using (var cmd = _db.CreateCommand(sql))
             {
-                while (await reader.ReadAsync())
+                cmd.Parameters.AddWithValue("@company", company);
+                await using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    chats.Add(new
+                    while (await reader.ReadAsync())
                     {
-                        chat = reader.GetInt32(0),
-                        message = reader.GetString(1),
-                        sender = reader.GetString(2),
-                        timestamp = reader.GetDateTime(3).ToString("o"),
-                        csrep = reader.GetBoolean(4)
-                    });
+                        chats.Add(new
+                        {
+                            chat = reader.GetInt32(0),
+                            message = reader.GetString(1),
+                            sender = reader.GetString(2),
+                            timestamp = reader.GetDateTime(3).ToString("o"),
+                            csrep = reader.IsDBNull(4) ? false : reader.GetBoolean(4)
+                        });
+                    }
                 }
             }
+            return JsonSerializer.Serialize(chats, new JsonSerializerOptions { WriteIndented = true });
         }
-        return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetChatsForCsRep: {ex.Message}");
+            throw; 
+        }
     }
 
     public async Task<string> WriteChatToDB(string message, string email, int chatId, int caseType, string company, bool csrep)
@@ -268,6 +309,10 @@ public class Queries
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
 }
+
+
+
+
 
 
 

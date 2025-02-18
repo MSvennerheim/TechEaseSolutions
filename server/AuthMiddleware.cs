@@ -4,6 +4,7 @@ public class AuthMiddleware  // behövde skapa en middleware för att kunna aute
 {
     private readonly RequestDelegate _next;
 
+
     public AuthMiddleware(RequestDelegate next)
     {
         _next = next;

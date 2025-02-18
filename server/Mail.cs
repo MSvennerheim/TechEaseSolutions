@@ -7,27 +7,30 @@ using System.IO;
 
 public class Mail
 {
-    public void generateNewIssue(Ticket ticketinformation)
+    
+    
+    //byta namnet till ett mer direkt namn
+    public async Task SendTokenLink(string email, int chatId, string token)
     {
         MimeMessage mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
-        mimeMessage.To.Add(MailboxAddress.Parse(ticketinformation.email));
+        mimeMessage.To.Add(MailboxAddress.Parse(email));
         mimeMessage.Subject = "Tack för att du skickat in ditt ärende till TechEaseSolution";
 
 
         var bodyBuilder = new BodyBuilder();
         
-        bodyBuilder.HtmlBody = @$"
-        <html>
-        <body>
-            <h2>Tack för ditt ärende!</h2>
-            <p>Vi har nu tagit emot ditt ärende #{ticketinformation.chatid}.</p>
-            <p>Kundtjänst kommer svara så fort de kan.</p>
-            <p><img src='cid:image1'></p>
-            <p>Svara inte på detta mejlet, det är autogenererat</p>
-        </body>
-        </html>";
+        bodyBuilder.HtmlBody = @$" 
+    <html>
+    <body>
+        <h2>Åtkomst till ditt ärende</h2>
+        <p>Klicka på länken nedan för att se och hantera ditt ärende:</p>
+        <p><a href='http://localhost:5173/case/{token}'>Öppna ärende #{chatId}</a></p>
+        <p>Svara inte på detta mejlet, det är autogenererat.</p>
+    </body>
+    </html>";
 
+     
         
         string imagePath = "TecheaseSolutionslogo.png";
         if (File.Exists(imagePath))
