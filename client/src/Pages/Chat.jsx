@@ -2,9 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSendChatAnswer } from "../Components/ChatAnswer.jsx";
 
+
+
 const ChatHistory = () => {
   const { chatId } = useParams();
   const [data, setData] = useState([]);
+  const [updateTicker, setUpdateTicker] = useState(0)
+
 
   useEffect(() => {
     const GetChats = async () => {
@@ -13,9 +17,16 @@ const ChatHistory = () => {
       setData(responseData);
     };
     GetChats();
-  }, [chatId]);
+  }, [updateTicker]);
 
   const { message, setMessage, email, setEmail, csrep, setCsrep, sendToBackend } = useSendChatAnswer();
+
+
+  const updateSite = () => {
+    setTimeout(() => {
+      setUpdateTicker(updateTicker + 1)
+    }, 100);
+  }
 
   return (
     <div>
@@ -39,17 +50,17 @@ const ChatHistory = () => {
         <input
           id="email"
           value={email}
-          placeholder="Enter your Email..."
+          placeholder="Placeholder enter your Email..."
           onChange={(e) => setEmail(e.target.value)}
         />
-        <p>Answer from a CS rep?</p>
+        <p>Placeholder answer from a CS rep?</p>
         <input
           id="csrep"
           type="checkbox"
           checked={csrep}
           onChange={(e) => setCsrep(e.target.checked)}
         />
-        <button type="submit">Submit</button>
+        <button type="submit" onClick={updateSite} >Submit</button>
       </form>
     </div>
   );

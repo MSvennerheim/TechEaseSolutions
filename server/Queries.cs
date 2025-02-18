@@ -78,8 +78,6 @@ public class Queries
         // first get id for user from email and company from name, create timestamp and write to db.
         // if sender is csrep also return mailadress for sending to that ticket has been updated 
         
-        // TODO: rewrite so that check for caseid is from db instead of from frontend....
-        
         int senderId = 0; // just to get it to run, make a check so these are not 0 before writing to db
         int companyId = 0;
         int caseType = 0;
