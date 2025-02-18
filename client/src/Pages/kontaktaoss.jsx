@@ -37,7 +37,7 @@ function Home() {
   return (
       <>
         <div id="formwrap">
-          <form onSubmit={submitTicket}>
+          <form className="ticketForm" onSubmit={submitTicket}>
             <div id="dropdown">
               <label htmlFor="options">Välj ett ämne</label>
               <select
@@ -58,7 +58,7 @@ function Home() {
               </select>
             </div>
             <div id="wrapmail">
-              <div>
+              <div className="email">
                 <input
                     id="email"
                     value={email}
@@ -66,8 +66,9 @@ function Home() {
                     onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div>
-                <input
+              <div className="description">
+                <textarea
+                    className="DescriptionField"
                     name="issue"
                     value={description}
                     placeholder="Describe your issue..."
@@ -78,6 +79,7 @@ function Home() {
                 Skicka ärende
               </button>
             </div>
+
           </form>
         </div>
       </>

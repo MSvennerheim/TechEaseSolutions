@@ -26,7 +26,7 @@ export function userInformation() {
         setError('');
 
         if (!email || !selectedOption || !description) {
-            setError('Email, Description and option is required');
+            alert('Email, Description and option is required');
             return;
         }
 

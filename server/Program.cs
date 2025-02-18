@@ -201,14 +201,12 @@ app.MapPost("/api/form", async (HttpContext context) =>
         
         if (ticketInformation != null)
         {
-            //Populate the Ticket class further and push it to DB
-            queries.customerTempUser(ticketInformation);
             await queries.CompanyName(ticketInformation);
+            //Creates a temp user for a ticket.
+            await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
-            
-            // After successfull Insert, send an email the user wrote in the form
-
-            //newmail.generateNewIssue(ticketInformation);
+            //Creates a new confirmation mail that gets sent to the user in question.
+            // newmail.generateNewIssue(ticketInformation);
             
             return Results.Ok();
         }

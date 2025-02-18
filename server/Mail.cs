@@ -22,6 +22,8 @@ public class Mail
         <body>
             <h2>Tack för ditt ärende!</h2>
             <p>Vi har nu tagit emot ditt ärende #{ticketinformation.chatid}.</p>
+            <p>{ticketinformation.description}</p>
+            <p> För att få tillgång till din chat går du in: <a href='http://localhost:5173/Chat/{ticketinformation.chatid}'>HÄR</a>
             <p>Kundtjänst kommer svara så fort de kan.</p>
             <p><img src='cid:image1'></p>
             <p>Svara inte på detta mejlet, det är autogenererat</p>
