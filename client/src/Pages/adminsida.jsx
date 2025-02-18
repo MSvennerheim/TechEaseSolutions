@@ -1,4 +1,4 @@
-import {useParams} from "react-router-dom";
+import {Link, useParams} from "react-router-dom";
 import {useEffect, useState} from "react";
 
 function Adminsida() {
@@ -27,12 +27,13 @@ function Adminsida() {
       <>
         <div>
             <h1>Admin site</h1>
-            <Link to={`/admin/redigeramedarbetare`}><button>Redigera medarbetare</button></Link>
+            <Link to={`/redigeramedarbetare`}><button>edit coworkers</button></Link>
             <button>Redigera Formulär</button>
             <button>Arbetarsida</button>
         </div>
     </>
   );
+  
 
 }
 
