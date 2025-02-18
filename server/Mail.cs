@@ -72,8 +72,8 @@ public class Mail
         MimeMessage mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress("test", "kundtjanstssontest@gmail.com"));
         
-        mimeMessage.To.Add(MailboxAddress.Parse("max.svennerheim@gmail.com"));
-        //mimeMessage.To.Add(MailboxAddress.Parse(email));
+        //mimeMessage.To.Add(MailboxAddress.Parse("max.svennerheim@gmail.com"));
+        mimeMessage.To.Add(MailboxAddress.Parse(email));
         
         mimeMessage.Subject = "Ditt ärende har uppdaterats";
             
