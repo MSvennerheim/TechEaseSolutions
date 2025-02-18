@@ -19,8 +19,15 @@ public class Queries
         // get chat history for a specific chat using chatid as a JSON file
         
         var messages = new List<object>();
+
+        const string ChatHistory =
+            @"SELECT message, email, timestamp
+                FROM messages 
+                JOIN users ON messages.sender = users.id 
+                WHERE chatid = @chatid
+                ORDER BY timestamp ";
         
-        await using (var cmd = _db.CreateCommand("SELECT message, email, timestamp FROM messages JOIN users ON messages.sender = users.id WHERE chatid = @chatid"))
+        await using (var cmd = _db.CreateCommand(ChatHistory))
         {
             cmd.Parameters.AddWithValue("@chatid", chat);
             await using (var reader = await cmd.ExecuteReaderAsync())
