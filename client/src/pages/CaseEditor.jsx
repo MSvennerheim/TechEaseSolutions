@@ -112,6 +112,30 @@ function CaseEditor() {
         }
     };
 
+    //  Ta bort ett ämne
+        const handleDeleteTopic = async (id) => {
+            if (!id) {
+                setTopics(topics.filter(t => t.id !== null)); // Ta bort lokala, ej sparade topics
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5000/api/casetypes/${id}`, {
+                 method: "DELETE",
+                });
+
+                if (!response.ok) {
+                    throw new Error("Misslyckades med att ta bort ämnet.");
+                }
+
+                setTopics(topics.filter(t => t.id !== id));
+                alert("Ämnet har tagits bort!");
+            } catch (error) {
+                console.error("❌ Fel vid borttagning:", error);
+                alert("❌ Kunde inte ta bort ämnet.");
+            }
+        };
+
     return (
         <div>
             <h2>Redigera ämnen för företag {companyId}</h2>
@@ -130,7 +154,7 @@ function CaseEditor() {
                 <ul>
                     {topics.map((t, index) => (
                         <li key={index}>
-                            <input id="topicinputfield"
+                            <input 
                                 type="text" 
                                 value={t.text} 
                                 onChange={(e) => {
@@ -139,6 +163,7 @@ function CaseEditor() {
                                     setTopics(newTopics);
                                 }} 
                             />
+                            <button onClick={() => handleDeleteTopic(t.id)}>🗑 Ta bort</button>
                         </li>
                     ))}
                 </ul>

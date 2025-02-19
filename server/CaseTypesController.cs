@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using server.Properties;  // ✅ Se till att detta är rätt namespace
-using System.ComponentModel.DataAnnotations;  // Lägg till denna using
 
 [ApiController]
 [Route("api/casetypes")]
@@ -94,37 +93,28 @@ public class CaseTypesController : ControllerBase
         }
     }
 
-    // 🟢 Klass för att hantera casetypes
-    public class CaseTypeRequest
-    {
-        [Required(ErrorMessage = "NewCasetype är obligatoriskt")]
-        public CaseTypeUpdate NewCasetype { get; set; } = null!;
-    }
-
-    // Ny POST-metod med förenklad struktur
+    // 🆕 Lägg till nya casetypes i databasen (flyttad utanför UpdateCasetype)
     [HttpPost]
-    public IActionResult AddCasetype([FromBody] NewCaseTypeRequest request)
+    public IActionResult AddCasetype([FromBody] CaseTypeUpdate newCasetype)
     {
-        try 
+        Console.WriteLine($"🔍 Mottagen POST-request: '{newCasetype.Text}'");
+
+        if (string.IsNullOrWhiteSpace(newCasetype.Text))
         {
-            Console.WriteLine($"🔍 Mottagen POST-request: {System.Text.Json.JsonSerializer.Serialize(request)}");
+            return BadRequest(new { error = "Text får inte vara tom" });
+        }
 
-            if (string.IsNullOrWhiteSpace(request?.Text))
-            {
-                return BadRequest(new { error = "Text får inte vara tom" });
-            }
-
-            using (var conn = _db.GetConnection())
+        try
+        {
+            using (var conn = _db.GetConnection())  // 🟢 Anslut till databasen
             {
                 conn.Open();
-                using (var cmd = new NpgsqlCommand(
-                    "INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id", 
-                    conn))
+                using (var cmd = new NpgsqlCommand("INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id", conn)) // 🟢 Lägg till nytt case
                 {
-                    cmd.Parameters.AddWithValue("@text", request.Text);
-                    cmd.Parameters.AddWithValue("@company", request.Company);
+                    cmd.Parameters.AddWithValue("@text", newCasetype.Text);
+                    cmd.Parameters.AddWithValue("@company", newCasetype.Company);
+                    int newId = (int)cmd.ExecuteScalar();  // 🟢 Hämta ID för den nya posten
                     
-                    var newId = (int)cmd.ExecuteScalar();
                     Console.WriteLine($"✅ Nytt ämne sparat med ID {newId}");
                     return Ok(new { id = newId, message = "Casetype added" });
                 }
@@ -136,23 +126,34 @@ public class CaseTypesController : ControllerBase
             return StatusCode(500, new { error = "Internt serverfel", details = ex.Message });
         }
     }
-}
+
+    [HttpDelete("{id}")]
+    public IActionResult DeleteCasetype(int id)
+    {
+        using (var conn = _db.GetConnection())
+        {
+            conn.Open();
+            using (var cmd = new NpgsqlCommand("DELETE FROM casetypes WHERE id = @id", conn))
+            {
+                cmd.Parameters.AddWithValue("@id", id);
+                int rowsAffected = cmd.ExecuteNonQuery();
+
+                if (rowsAffected == 0)
+                {
+                    return NotFound(new { error = "Ämnet kunde inte hittas" });
+                }
+                return Ok(new { message = "Ämnet har raderats" });
+            }
+        }
+    } 
+} 
+
+   
 
 // 🟢 Klass för att hantera casetypes
 public class CaseTypeUpdate
 {
-    public int Id { get; set; }  // Inte nullable för uppdateringar
-    public string Text { get; set; } = string.Empty;
-    public int Company { get; set; }
-
-    public override string ToString()
-    {
-        return $"CaseTypeUpdate(Id={Id}, Text='{Text}', Company={Company})";
-    }
-}
-
-public class NewCaseTypeRequest
-{
-    public string Text { get; set; } = string.Empty;
-    public int Company { get; set; }
+    public int Id { get; set; }
+    public string Text { get; set; }
+    public int Company { get; set; }  // 🆕 Se till att Company är med!
 }
