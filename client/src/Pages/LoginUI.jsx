@@ -46,11 +46,6 @@ function LoginUI() {
           <div className='d-grid'>
             <button type='submit' className='btn btn-primary btn-lg'>Login</button>
           </div>
-
-        
-
-          
-          
         </form>
       </div>
     </div>

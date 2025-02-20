@@ -27,7 +27,7 @@ function Adminsida() {
       <>
         <div>
             <h1>Admin site</h1>
-            <Link to={`/redigeramedarbetare`}><button>edit coworkers</button></Link>
+            <Link to={`/:company/redigeramedarbetare/`}><button>edit coworkers</button></Link>
             <button>Redigera Formulär</button>
             <button>Arbetarsida</button>
         </div>

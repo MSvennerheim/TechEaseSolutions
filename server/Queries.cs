@@ -244,7 +244,6 @@ public class Queries
             cmd.Parameters.AddWithValue(ticket.id);
             cmd.Parameters.AddWithValue(ticket.chatid);
             cmd.Parameters.AddWithValue(now);
-            
             cmd.Parameters.AddWithValue(ticket.companyId);
             await cmd.ExecuteNonQueryAsync();
         }
@@ -288,7 +287,36 @@ public class Queries
         }
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
+    
+    public async Task GetCoWorkers()
+     {
+         Console.WriteLine("i queries");
+         var coWorkerList = new List<object>();
+         
+         await using (var cmd = _db.CreateCommand("SELECT email, c.name FROM users INNER JOIN public.companies c on c.id = users.company WHERE csrep = true"))
+         {
+             
+             await using (var reader = await cmd.ExecuteReaderAsync())
+             {
+                 while (await reader.ReadAsync())
+                 {
+                     var user = new User
+                     {
+                         Id = reader.GetInt32(reader.GetOrdinal("id")),
+                         Email = reader.GetString(reader.GetOrdinal("email")),
+                         Company = reader.GetInt32(reader.GetOrdinal("company")),
+                         IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
+                         IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
+                     };
+                     Console.WriteLine($"User from DB: {JsonSerializer.Serialize(user)}");
+                     return user;
+                 }
+             }
+         }
+     }
 }
+
+
 
 
 

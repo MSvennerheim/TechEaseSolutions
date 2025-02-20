@@ -20,9 +20,7 @@ export default function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/confirmation" element={<Confirmationsida />} />
-
         <Route path="/kontaktaoss/:companyName" element={<KontaktaOss />} />
-
         <Route path="/kontaktaoss" element={<KontaktaOss />} />
         {/* Skyddad routes */}
         <Route path="/arbetarsida/:company" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />

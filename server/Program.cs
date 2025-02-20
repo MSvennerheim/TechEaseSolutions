@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(1); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
+    // options.IdleTimeout = TimeSpan.FromMinutes(10); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
     options.Cookie.HttpOnly = true; // Skyddar så att cookien inte kan nås via js
     options.Cookie.IsEssential = true; // Cookien krävs för att sessionen ska kunna fungera
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // cookien skickas bara via https
@@ -215,6 +215,17 @@ app.MapPost("/api/form", async (HttpContext context) =>
     }
     return Results.BadRequest();
 });
+
+
+
+app.MapGet("/api/redigeramedarbetare",(HttpContext context) =>
+{
+    Console.WriteLine("hejhopp");
+    var coWorkers =  queries.GetCoWorkers();
+    return coWorkers;
+});
+
+
 
 app.Run();
 Console.ReadLine();

@@ -79,7 +79,7 @@ public class Mail
         var builder = new BodyBuilder();
 
         builder.HtmlBody = $@"<p>Ditt ärende har uppdaterats</p> </br>
-                            <a href=´http://localhost:5173/Chat/{chatid}´ >klicka här för att se ditt ärende</a>";
+                            <a href='http://localhost:5173/Chat/{chatid}' >klicka här för att se ditt ärende</a>";
         
         SmtpClient client = new SmtpClient();
         try
