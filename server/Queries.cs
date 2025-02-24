@@ -25,29 +25,93 @@ public class Queries
         var token = Guid.NewGuid().ToString();
 
         const string insertTokenSql =
-            @"INSERT INTO case_tokens (token, case_id, email, expires_at) 
-          VALUES (@token, @case_id, @email, @expires_at);";
+            @"INSERT INTO case_tokens (token, case_id, email, expires_at, used) 
+          VALUES (@token, @case_id, @email, @expires_at, @used);";
 
         await using (var cmd = _db.CreateCommand(insertTokenSql))
         {
             cmd.Parameters.AddWithValue("@token", token);
             cmd.Parameters.AddWithValue("@case_id", chatId); 
             cmd.Parameters.AddWithValue("@email", email);
-            cmd.Parameters.AddWithValue("@expires_at", DateTime.UtcNow.AddHours(24)); 
+            cmd.Parameters.AddWithValue("@expires_at", DateTime.UtcNow.AddHours(24)); // tokenen går ut inom 24 timmar  
+            cmd.Parameters.AddWithValue("@used", false); // tokenen är inte oanvönd
+            int rowsAffected = await cmd.ExecuteNonQueryAsync();
             await cmd.ExecuteNonQueryAsync();
         }
         return token;
     }
 
-    public async Task<bool> ValidateToken(string token)
+    
+    //Validerar tokenen och emailen 
+    public async Task<bool> ValidateTokenAndEmail(string token, string email, HttpContext context)
     {
-        const string sql = @"SELECT COUNT(*) FROM case_tokens WHERE token = @token AND expires_at > NOW();";
+        Console.WriteLine($"Starting token validation for token: {token}, email: {email}");
+        
+        var referer = context.Request.Headers["Referer"].ToString();
+        if (string.IsNullOrEmpty(referer) ||
+            (!referer.Contains("mail.google.com") &&
+             !referer.Contains("outlook.live.com") &&
+             !referer.Contains("localhost")))
+        {
+            Console.WriteLine("invalid Referer header. The request must come from an email client or localhost");
+            return false;
+        }
+        
+        
+        
+        const string checkSql = @" SELECT ct.id, ct.used, ct.expires_at FROM case_tokens ct WHERE ct.token = @token and ct.email = @email";
 
-        await using (var cmd = _db.CreateCommand(sql))
+        await using (var cmd = _db.CreateCommand(checkSql))
         {
             cmd.Parameters.AddWithValue("@token", token);
-            var result = await cmd.ExecuteScalarAsync(); // ExecuteScalarAsync returnerar ett object
-            return Convert.ToInt32(result) > 0; // Konvertera resultatet till int
+            cmd.Parameters.AddWithValue("@email", email);
+
+            await using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    var tokenId = reader.GetInt32(0);
+                    var used = reader.GetBoolean(1);
+                    var expiresAt = reader.GetDateTime(2);
+                    
+                    Console.WriteLine($"Token: {token}, Used: {used}, ExpiresAt: {expiresAt}");
+
+                    if (expiresAt < DateTime.UtcNow)
+                    {
+                        Console.WriteLine("Token has expired");
+                        return false;
+                    }
+
+                    if (used)
+                    {
+                        var sessionEmail = context.Session.GetString("EmailSession");
+                        var sessionToken = context.Session.GetString("TokenSession");
+
+                        if (sessionEmail == email && sessionToken == token)
+                        {
+                            Console.WriteLine("Token have already been used, the session  is invalid");
+                            return true;
+                        }
+                        Console.WriteLine("Token has already been used, the session is invalid");
+                        return false;
+                    }
+
+                    const string markUsedSql = @"UPDATE case_tokens SET used = true WHERE id = @id";
+                    await using (var updatecmd = _db.CreateCommand(markUsedSql))
+                    {
+                        updatecmd.Parameters.AddWithValue("@id", tokenId);
+                        await updatecmd.ExecuteNonQueryAsync();
+                    }
+                    Console.WriteLine("Token is valid and has been marked as used");
+                    return true;
+
+                }
+                else
+                {
+                    Console.WriteLine("No token found mtaching the criteria");
+                    return false;
+                }
+            }
         }
     }
 

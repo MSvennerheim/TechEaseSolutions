@@ -34,7 +34,7 @@ const Arbetarsida = () => {
             <button>Gå till chatten</button>
           </Link>
           <br />
-          <a href={`http://localhost:5173/case/${chats.token}`} target="_blank" rel="noopener noreferrer">
+          <a href={`http://localhost:5173/case/${chats.token}?email=${encodeURIComponent(chats.email)}`} target="_blank" rel="noopener noreferrer">
             Öppna ärende i ny flik
           </a>
         </div>

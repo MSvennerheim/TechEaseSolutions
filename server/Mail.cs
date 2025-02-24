@@ -13,7 +13,7 @@ public class Mail
     public async Task SendTokenLink(string email, int chatId, string token)
     {
         MimeMessage mimeMessage = new MimeMessage();
-        mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
+        mimeMessage.From.Add(new MailboxAddress("TechEaseSolution", "kundtjanstssontest@gmail.com"));
         mimeMessage.To.Add(MailboxAddress.Parse(email));
         mimeMessage.Subject = "Tack för att du skickat in ditt ärende till TechEaseSolution";
 
@@ -25,7 +25,7 @@ public class Mail
     <body>
         <h2>Åtkomst till ditt ärende</h2>
         <p>Klicka på länken nedan för att se och få hjälp med ditt ärende:</p>
-        <p><a href='http://localhost:5173/case/{token}'>Öppna ärende här #{chatId}</a></p>
+        <p><a href='http://localhost:5173/case/{token}?email={email}'>Öppna ärende här #{chatId}</a></p>
         <p>Svara inte på detta mejlet, det är autogenererat.</p>
     </body>
     </html>";
@@ -72,9 +72,7 @@ public class Mail
 
         MimeMessage mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress("test", "kundtjanstssontest@gmail.com"));
-        
         mimeMessage.To.Add(MailboxAddress.Parse(email));
-        
         mimeMessage.Subject = "Ditt ärende har uppdaterats";
             
         var builder = new BodyBuilder();
@@ -82,13 +80,13 @@ public class Mail
         builder.HtmlBody = $@"<p>Ditt ärende har uppdaterats</p> </br>
                             <a href=´http://localhost:5173/Chat/{chatid}´ >klicka här för att se ditt ärende</a>";
         
-        SmtpClient client = new SmtpClient();
+     using SmtpClient client = new SmtpClient();
         try
         {
             client.Connect("smtp.gmail.com", 465, true);
             client.Authenticate("kundtjanstssontest@gmail.com", "iitp gitd mlha yvvp");
             client.Send(mimeMessage);
-                
+            return true;
         }
         catch (Exception ex)
         {
