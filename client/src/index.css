@@ -2,10 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 
 body {
-
+    background-color: rgba(13, 110, 253, 1);
     min-height: 100vh;
     margin: 0;
 }
+
+h1{
+    text-align: center;
+    font-size: 5rem;
+}
+
 
 .ticketForm{
     display: flex;
@@ -165,4 +171,82 @@ body {
 
 #options option {
     font-size: 14px;
+}
+
+.EmployeeLayout {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Centers employee cards horizontally */
+    align-items: center; /* Aligns items vertically */
+    gap: 20px; /* Adds space between employee cards */
+    text-align: center;
+}
+
+.LayoutWrapper {
+    display: flex;
+    justify-content: center; /* Ensures everything inside is centered */
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    margin: auto;
+}
+
+.Employee {
+    background-color: white;
+    width: 20rem;
+    height: 14rem;
+    padding: 3%;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.Employee:hover {
+    background-color: whitesmoke;
+}
+
+.addEmployee {
+    width: 20rem;
+    height: 14rem;
+    background-color: white;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+.addEmployee:hover {
+    background-color: whitesmoke;
+}
+
+.adminIcons{
+    width: 10rem;
+    height: 10rem;
+}
+
+.adminNavBar{
+    display: flex;
+    flex-direction: row;
+}
+
+.adminLayoutP{
+    text-align: center;
+    text-decoration: none;
+    font-size: 2rem;
+}
+
+.adminNavBar{
+    margin-top: 15rem;
+    display: flex;
+    justify-content: space-around;
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.plusImage{
+    width: 5rem;
+    height: 5rem;
 }
