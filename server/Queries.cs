@@ -225,7 +225,6 @@ public class Queries
         {
             var storedPassword = reader.GetString(reader.GetOrdinal("password"));
             
-            
             if (password == storedPassword)
             {
                 var user = new User

@@ -172,6 +172,68 @@ h1{
 #options option {
     font-size: 14px;
 }
+/* Case Editor */
+#modifywrapper {
+    font-family: "Roboto Mono", serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+#modifywrapper h1 {
+    font-family: "Roboto Condensed", serif;
+}
+
+#modifywrapper button {
+    font-family: "Roboto Mono", serif;
+    font-size: 14px;
+    background-color: #4caf50;
+    color: #f8f8f8;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+#text_button {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#text_button textarea {
+    flex-grow: 1;
+    min-width: 300px;
+    height: 100px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#delete-button {
+    border: none;
+    background: none !important;
+    cursor: pointer;
+    font-size: 1.2em;
+    height: 25px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Topics list styling */
+#topics-list {
+    padding: 0;
+}
+
+#topic-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
 
 .EmployeeLayout {
     display: flex;
@@ -249,4 +311,21 @@ h1{
 .plusImage{
     width: 5rem;
     height: 5rem;
+}
+
+#topic-input {
+    font-family: "Roboto Mono", serif;
+    flex-grow: 1;
+    margin-right: 10px;
+    height: 25px;
+    min-width: 300px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#topicinputfield{
+    font-family: "Roboto Mono", serif;
+    margin: 5px;
 }
