@@ -178,13 +178,42 @@ public class Queries
         // return empty string if we don't need to send confirmation
         return "";
     }
+
+    public async Task<List<User>> GetEmployees()
+    {
+        var users = new List<User>();
+
+        await using (var cmd = _db.CreateCommand(
+                         "SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where (admin = 'true' or csrep = 'true')"))
+        {
+            await using var reader = await cmd.ExecuteReaderAsync();
+        
+            while (await reader.ReadAsync())
+            {
+                var user = new User
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("id")),
+                    Email = reader.GetString(reader.GetOrdinal("email")),
+                    CompanyName = reader.GetString(reader.GetOrdinal("name")),
+                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
+                    IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
+                };
+
+                users.Add(user);
+            }
+        }
+
+        return users;
+    }
+
     
     
     public async Task<User?> ValidateUser(string email, string password)
     {
         const string sql = @"
-            SELECT id, email, password, company, csrep, admin
-            FROM users 
+            SELECT users.id, email, password, company, csrep, admin, name
+            FROM users
+            inner join public.companies c on c.id = users.company
             WHERE email = @email";
 
         await using var cmd = _db.CreateCommand(sql);
@@ -205,7 +234,8 @@ public class Queries
                     Email = reader.GetString(reader.GetOrdinal("email")),
                     Company = reader.GetInt32(reader.GetOrdinal("company")),
                     IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
-                    IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
+                    IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin")),
+                    CompanyName = reader.GetString(reader.GetOrdinal("name"))
                 };
                 Console.WriteLine($"User from DB: {JsonSerializer.Serialize(user)}");
                 return user;
@@ -216,7 +246,6 @@ public class Queries
     }
     public async Task customerTempUser(Ticket ticket)
     {
-        //Make sure that you can't have duplicate emails on the same company id in the database.
         await using (var checkCmd =
                      _db.CreateCommand("SELECT id, email, company FROM users where email = @email AND company = @company"))
         {
@@ -338,4 +367,5 @@ public class User
     public int Company { get; set; }
     public bool IsCustomerServiceUser { get; set; }
     public bool IsAdmin { get; set; }
+    public string? CompanyName { get; set; }
 }
