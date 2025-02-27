@@ -265,7 +265,8 @@ h1{
 }
 
 .Employee:hover {
-    background-color: whitesmoke;
+    background-color: rgb(237, 234, 222);
+    transition: background-color 0.3s ease;
 }
 
 .addEmployee {
@@ -280,7 +281,8 @@ h1{
 }
 
 .addEmployee:hover {
-    background-color: whitesmoke;
+    background-color: rgb(237, 234, 222);
+    transition: background-color 0.3s ease;
 }
 
 .adminIcons{
@@ -328,4 +330,8 @@ h1{
 #topicinputfield{
     font-family: "Roboto Mono", serif;
     margin: 5px;
+}
+
+.Employee-large{
+    
 }

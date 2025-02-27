@@ -56,7 +56,6 @@ function Redigeramedarbetare() {
                                 </p>
                                 <p><strong>Admin:</strong> {item.isAdmin ? "Yes" : "No"}</p>
                             </div>
-
                         </div>
                     ))
                 ) : (

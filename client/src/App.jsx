@@ -5,7 +5,7 @@ import Adminsida from "./Pages/Adminsida.jsx";
 import Arbetarsida from "./Pages/Arbetarsida.jsx";
 import KontaktaOss from "./Pages/Kontaktaoss.jsx";
 import Confirmationsida from "./Pages/confirmationsida.jsx";
-import Redigeramall from "./Pages/redigeramall.jsx";
+import CaseEditor from "./Pages/CaseEditor.jsx";
 import Redigeramedarbetare from "./Pages/redigeramedarbetare.jsx";
 import ChatHistory from "./pages/Chat.jsx"
 import './index.css';
@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/confirmation" element={<Confirmationsida />} />
 
         <Route path="/kontaktaoss/:companyName" element={<KontaktaOss />} />
-
+        <Route path="/redigeramall" element={<CaseEditor />} />
         <Route path="/kontaktaoss" element={<KontaktaOss />} />
         {/* Skyddad routes */}
         <Route path="/arbetarsida/:company" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
@@ -30,9 +30,10 @@ export default function App() {
         {/* vet inte rikigt än Routes */}
 
         <Route path="/redigeramedarbetare" element={<Redigeramedarbetare />} />
-        <Route path="/redigeramall" element={<Redigeramall />} />
+        
         <Route path="Chat/:chatId" element={<ChatHistory />} />
       </Routes>
     </BrowserRouter>
   );
 }
+
