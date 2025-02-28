@@ -11,15 +11,17 @@ function CaseEditor() {
     // 🟢 Hämta casetypes från backend
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/casetypes?companyId=${companyId}`)
+        fetch(`/api/casetypes`)
             .then(response => response.json())
+            
             .then(data => setTopics(data))
             .catch(error => {
                 console.error("❌ Fel vid hämtning av casetypes:", error);
                 setError("Kunde inte hämta casetypes. Kontrollera backend.");
             })
+            
             .finally(() => setLoading(false));
-    }, [companyId]);
+    }, []);
 
     // 🟢 Lägg till ett nytt ämne i UI (ej i databasen än)
     const handleAddTopic = () => {
@@ -148,6 +150,7 @@ function CaseEditor() {
                     value={newTopic} 
                     onChange={(e) => setNewTopic(e.target.value)}
                     placeholder="Skriv ett nytt ämne..."
+                    name="newTopic"
                 />
                 <button onClick={handleAddTopic}>Lägg till</button>
 
@@ -155,6 +158,7 @@ function CaseEditor() {
                     {topics.map((t, index) => (
                         <li key={index}>
                             <input 
+                                name="topics"
                                 type="text" 
                                 value={t.text} 
                                 onChange={(e) => {
