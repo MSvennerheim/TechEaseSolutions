@@ -4,15 +4,23 @@ using server;
 using server.Properties;
 using System.Text.Json;
 
-
-
 Database database = new();
 var db = database.Connection();
 Queries queries = new(db);
 Mail newmail = new Mail();
 
-
 var builder = WebApplication.CreateBuilder(args);
+
+// Lägg till CORS-tjänsten till DI-container
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins("http://localhost:5173") // Här anger du frontends URL (eller "*" om alla origin ska tillåtas)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 // här konfigureras sessionshantering
 builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
@@ -46,16 +54,11 @@ app.UseAuthentication(); // Aktiverar autentisering
 app.UseAuthorization();  // aktiverar behörighetshantering
 app.UseMiddleware<AuthMiddleware>();  // Detta är min egna middleware för autentisering 
 
-
-
 app.MapGet("/", () => "Hello World!");
 
 app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
 {
-    // Console.WriteLine(company);
     var companyDetails = await queries.GetCompanyName(company);
-    
-    // Console.WriteLine(companyDetails);
     return companyDetails;
 });
 
@@ -73,25 +76,19 @@ app.MapGet("/api/editCoWorker", async (HttpContext context) =>
 
 app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
-
     var chatId = int.Parse(context.Request.RouteValues["chatId"]?.ToString());
     using var reader = new StreamReader(context.Request.Body);
     var body = await reader.ReadToEndAsync();
     var chatData = JsonSerializer.Deserialize<ChatData>(body);
     chatData.chatId = chatId;
-    // deserialize json before putting into WriteChatToDB
-    // (needed here since chatId is needed for emailConfirmationOnAnswer)
 
     string emailConfirmationAdress = await queries.WriteChatToDB(chatData);
     if (emailConfirmationAdress != "")
     {
-        // hopefully this'll work, but first get in the response to db
         await newmail.emailConfirmationOnAnswer(emailConfirmationAdress, chatData.chatId);
         Console.WriteLine("Email sent placeholder to email: " + emailConfirmationAdress);
     }
-    
 });
-
 
 app.MapGet("/api/arbetarsida/{company}", async (string company) =>
 {
@@ -109,44 +106,36 @@ app.MapPost("/api/login", async (HttpContext context) =>
         var body = await reader.ReadToEndAsync();
         var loginData = JsonSerializer.Deserialize<LoginRequest>(body);
 
-        
-        // Kontroll om en epost och lösenord har skickats 
         if (loginData == null || string.IsNullOrEmpty(loginData.Email) || string.IsNullOrEmpty(loginData.Password))
         {
             return Results.BadRequest(new { message = "Email and password are required" });
         }
-        
-        
-        // checkar användaren genom att kolla up den i databasen
+
         var user = await queries.ValidateUser(loginData.Email, loginData.Password);
         if (user != null)
         {
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true, // behåller sessionen även om den har stängts 
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) // sessionen gäller i 24 timmar 
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24)
             };
-            
-            // Skapar en cookie-baserad autentisering för användaren. 
+
             await context.SignInAsync(
                 "CookieAuth",  
                 new ClaimsPrincipal(new ClaimsIdentity(
                     new[] {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),  //sparar användarens Id
-                        new Claim(ClaimTypes.Email, user.Email), // sparar användarens  e-post 
-                        new Claim("IsAdmin", user.IsAdmin.ToString()) // sparar om användaren är admin eller inte 
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim("IsAdmin", user.IsAdmin.ToString())
                     },
                     "CookieAuth")),
                 authProperties
             );
-             // lagrar användarensinformation i sessionen
+
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
 
-            
-            
-            // Retunerar inloggningsdata
             return Results.Ok(new { 
                 token = "test-token",
                 user = new {
@@ -167,6 +156,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
         return Results.BadRequest(new { message = "An error occurred during login." });
     }
 });
+
 // API-endpoint för att se om användaren skulle ha en aktiv session
 app.MapGet("/api/check-session", (HttpContext context) =>
 {
@@ -177,13 +167,11 @@ app.MapGet("/api/check-session", (HttpContext context) =>
     // felsökning
     Console.WriteLine($"Session Data: UserId={userId}, Email={email}, IsAdmin={isAdmin}");
 
-    // om ingen användare är inloggad ska det retunera unauthorized
     if (string.IsNullOrEmpty(userId))
     {
         return Results.Unauthorized();
     }
 
-    // retunerar sessionens inforamation till frontend
     return Results.Ok(new
     {
         userId,
@@ -199,22 +187,19 @@ app.MapPost("/api/form", async (HttpContext context) =>
         using var reader = new StreamReader(context.Request.Body);
         var body = await reader.ReadToEndAsync();
         var ticketInformation = JsonSerializer.Deserialize<Ticket>(body);
-        
-        
-        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) || string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
+
+        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) ||
+            string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
         {
             return Results.BadRequest(new { message = "All fields have to be entered" });
         }
-        
+
         if (ticketInformation != null)
         {
             await queries.CompanyName(ticketInformation);
-            //Creates a temp user for a ticket.
             await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
-            //Creates a new confirmation mail that gets sent to the user in question.
-            // newmail.generateNewIssue(ticketInformation);
-            
+
             return Results.Ok();
         }
     }
@@ -222,12 +207,12 @@ app.MapPost("/api/form", async (HttpContext context) =>
     {
         Console.WriteLine($"Error: {ex}");
     }
+
     return Results.BadRequest();
 });
 
 app.Run();
 Console.ReadLine();
-
 
 // En klass för att kunna representera inloggningsförfrågningar
 public class LoginRequest
@@ -241,8 +226,5 @@ public class ChatData
     public string message { get; set; }
     public string email { get; set; }
     public int chatId { get; set; }
-    // public int CaseType { get; set; }
-    // public string Company { get; set; }
     public bool csrep { get; set; }
 }
-

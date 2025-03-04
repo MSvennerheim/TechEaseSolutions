@@ -3,7 +3,7 @@ using Npgsql;
 using server.Properties;  // ✅ Se till att detta är rätt namespace
 
 [ApiController]
-[Route("api/casetypes")]
+[Route("/api/casetypes/{companyId}")]
 public class CaseTypesController : ControllerBase
 {
     private readonly Database _db;
@@ -15,17 +15,17 @@ public class CaseTypesController : ControllerBase
 
     // 🟢 Hämta casetypes från databasen
     [HttpGet]
-    public IActionResult GetCasetypes([FromQuery] int companyId)
+    public IActionResult GetCasetypes([FromRoute] int companyId)  // Ändra från [FromQuery] till [FromRoute]
+
     {
         Console.WriteLine($"🔍 Mottagen GET-request för companyId: {companyId}");
         var casetypes = new List<object>();
 
         try
         {
-            using (var conn = _db.GetConnection())
+            using (var conn = _db.Connection())
             {
-                conn.Open();
-                using (var cmd = new NpgsqlCommand("SELECT id, text FROM casetypes WHERE company = @companyId", conn))
+                using (var cmd = new NpgsqlCommand("SELECT id, text FROM casetypes WHERE company = @companyId"))
                 {
                     cmd.Parameters.AddWithValue("@companyId", companyId);
                     using (var reader = cmd.ExecuteReader())
@@ -62,14 +62,13 @@ public class CaseTypesController : ControllerBase
 
         try
         {
-            using (var conn = _db.GetConnection())
+            using (var conn = _db.Connection())
             {
-                conn.Open();
                 foreach (var update in updates)
                 {
                     Console.WriteLine($"📌 Uppdaterar casetype ID {update.Id} → '{update.Text}'");
 
-                    using (var cmd = new NpgsqlCommand("UPDATE casetypes SET text = @text WHERE id = @id", conn))
+                    using (var cmd = new NpgsqlCommand("UPDATE casetypes SET text = @text WHERE id = @id"))
                     {
                         cmd.Parameters.AddWithValue("@text", update.Text);
                         cmd.Parameters.AddWithValue("@id", update.Id);
@@ -106,10 +105,9 @@ public class CaseTypesController : ControllerBase
 
         try
         {
-            using (var conn = _db.GetConnection())  // 🟢 Anslut till databasen
+            using (var conn = _db.Connection())  // 🟢 Anslut till databasen
             {
-                conn.Open();
-                using (var cmd = new NpgsqlCommand("INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id", conn)) // 🟢 Lägg till nytt case
+                using (var cmd = new NpgsqlCommand("INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id")) // 🟢 Lägg till nytt case
                 {
                     cmd.Parameters.AddWithValue("@text", newCasetype.Text);
                     cmd.Parameters.AddWithValue("@company", newCasetype.Company);
@@ -130,10 +128,9 @@ public class CaseTypesController : ControllerBase
     [HttpDelete("{id}")]
     public IActionResult DeleteCasetype(int id)
     {
-        using (var conn = _db.GetConnection())
+        using (var conn = _db.Connection())
         {
-            conn.Open();
-            using (var cmd = new NpgsqlCommand("DELETE FROM casetypes WHERE id = @id", conn))
+            using (var cmd = new NpgsqlCommand("DELETE FROM casetypes WHERE id = @id"))
             {
                 cmd.Parameters.AddWithValue("@id", id);
                 int rowsAffected = cmd.ExecuteNonQuery();

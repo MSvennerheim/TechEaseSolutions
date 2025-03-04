@@ -7,11 +7,12 @@ function CaseEditor() {
     const [newTopic, setNewTopic] = useState("");
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    
 
     // 🟢 Hämta casetypes från backend
     useEffect(() => {
         setLoading(true);
-        fetch(`http://localhost:5000/api/casetypes?companyId=${companyId}`)
+        fetch(`/api/casetypes/${companyId}`)
             .then(response => response.json())
             .then(data => setTopics(data))
             .catch(error => {
@@ -49,7 +50,7 @@ function CaseEditor() {
         try {
             // 🟢 Skicka PUT för uppdateringar
             if (existingTopics.length > 0) {
-                const updateResponse = await fetch("http://localhost:5000/api/casetypes", {
+                const updateResponse = await fetch("/api/casetypes", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(existingTopics),
@@ -75,7 +76,7 @@ function CaseEditor() {
                 console.log("🔍 Försöker skicka data:", JSON.stringify(requestData, null, 2));
                 
                 try {
-                    const response = await fetch("http://localhost:5000/api/casetypes", {
+                    const response = await fetch("/api/casetypes", {
                         method: "POST",
                         headers: { 
                             "Content-Type": "application/json"
@@ -120,7 +121,7 @@ function CaseEditor() {
             }
 
             try {
-                const response = await fetch(`http://localhost:5000/api/casetypes/${id}`, {
+                const response = await fetch(`/api/casetypes/${id}`, {
                  method: "DELETE",
                 });
 
