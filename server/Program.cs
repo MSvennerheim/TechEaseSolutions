@@ -211,6 +211,17 @@ app.MapPost("/api/form", async (HttpContext context) =>
     return Results.BadRequest();
 });
 
+app.MapGet("/api/casetypes", async (HttpContext context) =>
+{
+    var CaseType = await queries.fetchCaseTypes();
+    if (CaseType == null)
+    {
+        return Results.BadRequest();
+    }
+
+    return Results.Ok(CaseType);
+});
+
 app.Run();
 Console.ReadLine();
 

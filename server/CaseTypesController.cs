@@ -20,6 +20,7 @@ public class CaseTypesController : ControllerBase
     {
         Console.WriteLine($"🔍 Mottagen GET-request för companyId: {companyId}");
         var casetypes = new List<object>();
+<<<<<<< HEAD
 
         try
         {
@@ -27,6 +28,10 @@ public class CaseTypesController : ControllerBase
             {
                 using (var cmd = new NpgsqlCommand("SELECT id, text FROM casetypes WHERE company = @companyId"))
                 {
+=======
+        
+        using (var cmd = new NpgsqlCommand("SELECT id, text FROM casetypes WHERE company = @companyId")) {
+>>>>>>> 4752cacfc2c19f69fb8a16526844fce4d9b40616
                     cmd.Parameters.AddWithValue("@companyId", companyId);
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -36,16 +41,9 @@ public class CaseTypesController : ControllerBase
                         }
                     }
                 }
-            }
 
-            Console.WriteLine($"✅ Returnerar {casetypes.Count} casetypes.");
-            return Ok(casetypes);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Fel vid hämtning av casetypes: {ex.Message}");
-            return StatusCode(500, new { error = "Internt serverfel", details = ex.Message });
-        }
+        Console.WriteLine($"✅ Returnerar {casetypes.Count} casetypes."); 
+        return Ok(casetypes);
     }
 
     // 🟢 Uppdatera casetypes i databasen
@@ -59,6 +57,7 @@ public class CaseTypesController : ControllerBase
             Console.WriteLine("❌ Ingen data mottagen!");
             return BadRequest(new { error = "Ingen data skickades" });
         }
+<<<<<<< HEAD
 
         try
         {
@@ -78,18 +77,31 @@ public class CaseTypesController : ControllerBase
                         {
                             Console.WriteLine($"⚠️ Ingen rad uppdaterades för ID {update.Id}!");
                         }
+=======
+        
+        using (var conn = _db.Connection()) 
+        { 
+            foreach (var update in updates) 
+            { 
+                Console.WriteLine($"📌 Uppdaterar casetype ID {update.Id} → '{update.Text}'");
+                
+                using (var cmd = new NpgsqlCommand("UPDATE casetypes SET text = @text WHERE id = @id")) 
+                { 
+                    cmd.Parameters.AddWithValue("@text", update.Text); 
+                    cmd.Parameters.AddWithValue("@id", update.Id); 
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    
+                    if (rowsAffected == 0) 
+                    { 
+                        Console.WriteLine($"⚠️ Ingen rad uppdaterades för ID {update.Id}!");
+>>>>>>> 4752cacfc2c19f69fb8a16526844fce4d9b40616
                     }
                 }
             }
+        }
 
             Console.WriteLine("✅ Ämnen uppdaterade i databasen!");
             return Ok(new { message = "Cases updated" });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Fel vid uppdatering: {ex.Message}");
-            return StatusCode(500, new { error = "Internt serverfel", details = ex.Message });
-        }
     }
 
     // 🆕 Lägg till nya casetypes i databasen (flyttad utanför UpdateCasetype)
@@ -102,9 +114,10 @@ public class CaseTypesController : ControllerBase
         {
             return BadRequest(new { error = "Text får inte vara tom" });
         }
-
-        try
+        
+        using (var conn = _db.Connection())  // 🟢 Anslut till databasen
         {
+<<<<<<< HEAD
             using (var conn = _db.Connection())  // 🟢 Anslut till databasen
             {
                 using (var cmd = new NpgsqlCommand("INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id")) // 🟢 Lägg till nytt case
@@ -116,12 +129,17 @@ public class CaseTypesController : ControllerBase
                     Console.WriteLine($"✅ Nytt ämne sparat med ID {newId}");
                     return Ok(new { id = newId, message = "Casetype added" });
                 }
+=======
+            using (var cmd = new NpgsqlCommand("INSERT INTO casetypes (text, company) VALUES (@text, @company) RETURNING id")) // 🟢 Lägg till nytt cas
+            {
+                cmd.Parameters.AddWithValue("@text", newCasetype.Text); 
+                cmd.Parameters.AddWithValue("@company", newCasetype.Company); 
+                int newId = (int)cmd.ExecuteScalar();  // 🟢 Hämta ID för den nya posten
+                
+                Console.WriteLine($"✅ Nytt ämne sparat med ID {newId}"); 
+                return Ok(new { id = newId, message = "Casetype added" });
+>>>>>>> 4752cacfc2c19f69fb8a16526844fce4d9b40616
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Fel vid skapande: {ex.Message}");
-            return StatusCode(500, new { error = "Internt serverfel", details = ex.Message });
         }
     }
 
@@ -130,6 +148,10 @@ public class CaseTypesController : ControllerBase
     {
         using (var conn = _db.Connection())
         {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4752cacfc2c19f69fb8a16526844fce4d9b40616
             using (var cmd = new NpgsqlCommand("DELETE FROM casetypes WHERE id = @id"))
             {
                 cmd.Parameters.AddWithValue("@id", id);

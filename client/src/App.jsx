@@ -1,11 +1,20 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from './pages/LoginUI.jsx';
 
+<<<<<<< HEAD
 import Adminsida from "./pages/Adminsida.jsx";
 import Arbetarsida from "./pages/Arbetarsida.jsx";
 import KontaktaOss from "./pages/Kontaktaoss.jsx";
 import Confirmationsida from "./pages/confirmationsida.jsx";
 import Redigeramedarbetare from "./pages/redigeramedarbetare.jsx";
+=======
+import Adminsida from "./Pages/Adminsida.jsx";
+import Arbetarsida from "./Pages/Arbetarsida.jsx";
+import KontaktaOss from "./Pages/Kontaktaoss.jsx";
+import Confirmationsida from "./Pages/confirmationsida.jsx";
+import CaseEditor from "./Pages/CaseEditor.jsx";
+import Redigeramedarbetare from "./Pages/redigeramedarbetare.jsx";
+>>>>>>> 4752cacfc2c19f69fb8a16526844fce4d9b40616
 import ChatHistory from "./pages/Chat.jsx"
 import EditForm from "./pages/CaseEditor.jsx"
 import './index.css';
@@ -22,7 +31,7 @@ export default function App() {
         <Route path="/confirmation" element={<Confirmationsida />} />
 
         <Route path="/kontaktaoss/:companyName" element={<KontaktaOss />} />
-
+        <Route path="/redigeramall" element={<CaseEditor />} />
         <Route path="/kontaktaoss" element={<KontaktaOss />} />
         {/* Skyddad routes */}
         <Route path="/arbetarsida/:company" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
@@ -30,9 +39,14 @@ export default function App() {
         {/* vet inte rikigt än Routes */}
         
         <Route path="/redigeramedarbetare" element={<Redigeramedarbetare />} />
+<<<<<<< HEAD
         <Route path="/edit/:companyId" element={<EditForm />} />
+=======
+        
+>>>>>>> 4752cacfc2c19f69fb8a16526844fce4d9b40616
         <Route path="Chat/:chatId" element={<ChatHistory />} />
       </Routes>
     </BrowserRouter>
   );
 }
+
