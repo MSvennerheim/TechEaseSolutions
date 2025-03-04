@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSendChatAnswer } from "../Components/ChatAnswer.jsx";
 
-
-
 const ChatHistory = () => {
   const { chatId } = useParams();
   const [data, setData] = useState([]);
@@ -46,19 +44,6 @@ const ChatHistory = () => {
           value={message}
           placeholder="Enter your message..."
           onChange={(e) => setMessage(e.target.value)}
-        />
-        <input
-          id="email"
-          value={email}
-          placeholder="Placeholder enter your Email..."
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <p>Placeholder answer from a CS rep?</p>
-        <input
-          id="csrep"
-          type="checkbox"
-          checked={csrep}
-          onChange={(e) => setCsrep(e.target.checked)}
         />
         <button type="submit" onClick={updateSite} >Submit</button>
       </form>
