@@ -17,7 +17,7 @@ const ChatHistory = () => {
     GetChats();
   }, [updateTicker]);
 
-  const { message, setMessage, email, setEmail, csrep, setCsrep, sendToBackend } = useSendChatAnswer();
+  const { message, setMessage, sendToBackend } = useSendChatAnswer();
 
 
   const updateSite = () => {

@@ -5,8 +5,6 @@ import { useParams } from "react-router-dom";
 
 export function useSendChatAnswer() {
   const [message, setMessage] = useState("");
-  const [email, setEmail] = useState("");
-  const [csrep, setCsrep] = useState(false);
   const { chatId } = useParams();
 
   const sendToBackend = async (e) => {
@@ -15,14 +13,12 @@ export function useSendChatAnswer() {
     await fetch(`/api/ChatResponse/${chatId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, email, csrep }),
+      body: JSON.stringify({message}),
     });
 
     // Clear fields after sent
     setMessage("");
-    setEmail("");
-    setCsrep(false);
   };
 
-  return { message, setMessage, email, setEmail, csrep, setCsrep, sendToBackend };
+  return { message, setMessage, sendToBackend };
 }
