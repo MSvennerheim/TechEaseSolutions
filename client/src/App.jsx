@@ -25,7 +25,7 @@ export default function App() {
 
         <Route path="/kontaktaoss" element={<KontaktaOss />} />
         {/* Skyddad routes */}
-        <Route path="/arbetarsida/:company" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
+        <Route path="/arbetarsida/" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
         <Route path="/admin/:company" element={<ProtectedRoute adminOnly={true}><Adminsida /></ProtectedRoute>} />
         {/* vet inte rikigt än Routes */}
 
