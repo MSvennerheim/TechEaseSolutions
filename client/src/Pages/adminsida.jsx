@@ -6,7 +6,7 @@ import customerservice from '../images/customer-support.png'
 
 function Adminsida() {
     
-    const { companyName } = useParams();
+    const { company } = useParams();
     const [data, setData] = useState([]);
 
     useEffect(() => {
@@ -18,7 +18,6 @@ function Adminsida() {
                 // console.log(responseData)
                 setData(responseData)
                 // Console.log(data)
-
             } catch (error) {
                 console.error("An error has occured:", error);
             }
@@ -31,15 +30,15 @@ function Adminsida() {
             <h1>Admin site</h1>
                 <div className="adminNavBar">
                     <div>
-                        <Link to={`/redigeramedarbetare`}><img src={cogwheel} className="adminIcons" /></Link>
+                        <Link to={`/redigeramedarbetare/${company}`}><img src={cogwheel} className="adminIcons" /></Link>
                         <p className="adminLayoutP">Employees</p>
                     </div>
                     <div>
-                        <Link to={`/redigeramall`}><img src={form} className="adminIcons"/></Link>
+                        <Link to={`/redigeramall/${company}`}><img src={form} className="adminIcons"/></Link>
                         <p className="adminLayoutP">Edit form</p>
                     </div>
                     <div>
-                        <Link to={`/arbetarsida:company`}><img src={customerservice} className="adminIcons"/></Link>
+                        <Link to={`/arbetarsida:company/${company}`}><img src={customerservice} className="adminIcons"/></Link>
                         <p className="adminLayoutP">Issues</p>
                 </div>
                 </div>

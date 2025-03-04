@@ -335,3 +335,17 @@ h1{
 .Employee-large{
     
 }
+
+#newCoworker{
+    position: absolute;
+    top: 30%;
+    left: 40%;
+}
+
+#CloseWindow{
+    position: absolute;
+    right: 10px;
+    top: 2px;
+    font-size: 1.5rem;
+    cursor: pointer;
+}

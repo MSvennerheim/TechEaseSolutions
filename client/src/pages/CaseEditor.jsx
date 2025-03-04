@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import {data, useParams} from "react-router-dom";
 
 function CaseEditor() {
     const { companyId } = useParams(); // Hämta companyId från URL
@@ -12,13 +12,9 @@ function CaseEditor() {
     // 🟢 Hämta casetypes från backend
     useEffect(() => {
         setLoading(true);
-<<<<<<< HEAD
-        fetch(`/api/casetypes/${companyId}`)
-=======
-        fetch(`/api/casetypes`)
->>>>>>> 4752cacfc2c19f69fb8a16526844fce4d9b40616
+
+        fetch(`api/casetypes`) 
             .then(response => response.json())
-            
             .then(data => setTopics(data))
             .catch(error => {
                 console.error("❌ Fel vid hämtning av casetypes:", error);
