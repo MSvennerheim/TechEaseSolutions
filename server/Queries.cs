@@ -355,37 +355,4 @@ public class Queries
         }
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
-    
-    
-    // TEST
-
-    public async Task<string> fetchCaseTypes()
-    {
-        var caseTypesList = new List<string>();
-        await using (var cmd = _db.CreateCommand("SELECT casetypes.text From CaseTypes"))
-        {
-            await using (var reader = await cmd.ExecuteReaderAsync())
-            {
-                while (await reader.ReadAsync())
-                {
-                    caseTypesList.Add(reader.GetString(0));
-                }
-            }
-        }
-        return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
-    }
-}
-
-
-
-
-
-public class User
-{
-    public int Id { get; set; }
-    public string Email { get; set; }
-    public int Company { get; set; }
-    public bool IsCustomerServiceUser { get; set; }
-    public bool IsAdmin { get; set; }
-    public string? CompanyName { get; set; }
 }

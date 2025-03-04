@@ -113,4 +113,65 @@ public class Mail
         return true;
     }
     
+    /*
+    
+    public async Task NewCSRep()
+    {
+                MimeMessage mimeMessage = new MimeMessage();
+        mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
+        mimeMessage.To.Add(MailboxAddress.Parse());
+        mimeMessage.Subject = "Välkommen till .....";
+
+
+        var bodyBuilder = new BodyBuilder();
+        
+        bodyBuilder.HtmlBody = @$"
+        <html>
+        <body>
+            <h2>Välkommen till ......</h2>
+            <p>Var vänlig och byta dit lösenord, tryck på länken nedan så kommer du att skickas vidare.</p>
+            <a href=""> <p>Hejsan<p> </a>
+            <p><img src='cid:image1'></p>
+            <p>Svara inte på detta mejlet, det är autogenererat</p>
+        </body>
+        </html>";
+
+        
+        string imagePath = "TecheaseSolutionslogo.png";
+        if (File.Exists(imagePath))
+        {
+            var image = bodyBuilder.LinkedResources.Add(imagePath);
+            image.ContentId = "image1";
+        }
+        else
+        {
+            Console.WriteLine("Image file not found: " + imagePath);
+        }
+
+        // Set the email body
+        mimeMessage.Body = bodyBuilder.ToMessageBody();
+
+        using (SmtpClient client = new SmtpClient())
+        {
+            try
+            {
+                client.Connect("smtp.gmail.com", 465, true);
+                client.Authenticate("kundtjanstssontest@gmail.com", "iitp gitd mlha yvvp");
+                client.Send(mimeMessage);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sending email: " + ex.Message);
+                throw;
+            }
+            finally
+            {
+                client.Disconnect(true);
+                client.Dispose();
+            }
+        }
+    }  
+     
+    */
+    
 }

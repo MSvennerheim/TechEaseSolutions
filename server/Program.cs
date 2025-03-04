@@ -68,11 +68,12 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
     return chatHistory;
 });
 
-app.MapGet("/api/editCoWorker", async (HttpContext context) =>
+app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
 {
     var employees = await queries.GetEmployees();
     return employees;
 });
+
 
 app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
@@ -211,16 +212,39 @@ app.MapPost("/api/form", async (HttpContext context) =>
     return Results.BadRequest();
 });
 
-app.MapGet("/api/casetypes", async (HttpContext context) =>
+app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
 {
-    var CaseType = await queries.fetchCaseTypes();
-    if (CaseType == null)
+    try
     {
-        return Results.BadRequest();
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var ticketInformation= JsonSerializer.Deserialize<Ticket>(body);
+
+        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) ||
+            string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
+        {
+            return Results.BadRequest(new { message = "All fields have to be entered" });
+        }
+
+        if (ticketInformation != null)
+        {
+            await queries.CompanyName(ticketInformation);
+            await queries.customerTempUser(ticketInformation);
+            await queries.postNewTicket(ticketInformation);
+
+            return Results.Ok();
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
     }
 
-    return Results.Ok(CaseType);
+    return Results.BadRequest();
 });
+
+
+
 
 app.Run();
 Console.ReadLine();
