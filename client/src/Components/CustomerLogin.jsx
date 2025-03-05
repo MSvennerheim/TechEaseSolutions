@@ -1,13 +1,21 @@
-import {useParams} from "react-router-dom";
-import {useSearchParams} from "react-router";
+import {useParams, useNavigate, useSearchParams} from "react-router-dom";
+import {useState, useEffect} from "react";
 
-export default function customerLogin() {
+export default function CustomerLogin() {
     const {chatId} = useParams()
     const [searchParams] = useSearchParams()
     const email = searchParams.get("email")
+    const navigate = useNavigate();
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+
+        if (email && chatId) {
+        handleSubmit();
+            }
+        }, [email, chatId])
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
         setError('');
 
         if (!email || !chatId) {
@@ -31,7 +39,7 @@ export default function customerLogin() {
             console.log('Login Response:', data); // Logga svaret från servern
 
             if (response.ok) {
-                navigate(`/chat/${data.user.chat}`)
+                navigate(`/chat/${data.user.chatId}`)
             } else {
                 setError(data.message || 'Login failed. Please check your credentials.');
             }
@@ -40,9 +48,7 @@ export default function customerLogin() {
                 setError('An unexpected error occurred. Please try again.');
                 return;
             }
-
-            return handleSubmit()
-
+            
         } catch (error) {
             setError('An error occurred during login. Please try again.');
             console.error('Login error:', error);
