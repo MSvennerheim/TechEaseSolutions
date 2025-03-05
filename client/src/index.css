@@ -338,8 +338,6 @@ h1{
 
 #newCoworker{
     position: absolute;
-    top: 30%;
-    left: 40%;
 }
 
 #CloseWindow{
@@ -348,4 +346,26 @@ h1{
     top: 2px;
     font-size: 1.5rem;
     cursor: pointer;
+}
+
+#confirmation-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(169,169,169,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+
+.confirmation-content h2 {
+    color: #FF6B6B;
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 2rem;
+    margin: 0 0 1rem 0;
 }

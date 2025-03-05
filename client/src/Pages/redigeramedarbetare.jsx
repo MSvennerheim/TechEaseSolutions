@@ -45,6 +45,7 @@ function Redigeramedarbetare() {
             },
             body: JSON.stringify({
                 email,
+                
             }),
         });
     }
@@ -76,45 +77,44 @@ function Redigeramedarbetare() {
                 ) : (
                     <p>No employees found.</p>
                 )}
+
+                {/* Plus Button to Toggle Modal */}
                 <div className="addEmployee" onClick={newCoworkerToggle}>
-                    <img src={plusSign} className="plusImage" />
+                    <img src={plusSign} className="plusImage"/>
                 </div>
 
+                {/* Confirmation Popup */}
+                {isVisible && (
+                    <div id="confirmation-popup" className="popup-overlay"  onClick={newCoworkerToggle}>
+                        <div id="newCoworker" className="popup-content" onClick={(e) => e.stopPropagation()}>
+                            <h2 className='text-center mb-4'>New customer support</h2>
+                            <p id="CloseWindow" onClick={newCoworkerToggle}>X</p>
 
-                {/* Pop-up window to handle the creation of a new csrep */}
-                
-                <div id="newCoworker" style={{display: isVisible ? "block" : "none"}}>
-                    <div className='bg-white p-4 rounded shadow-sm' style={{width: '400px'}}>
-                        <h2 className='text-center mb-4'>New customer support</h2>
-                        <p id="CloseWindow" onClick={newCoworkerToggle}>X</p>
+                            {error && <div className='alert alert-danger' role='alert'>{error}</div>}
 
-                        {error && <div className='alert alert-danger' role='alert'>{error}</div>}
-                        <form onSubmit={handleCoworkerSubmit}>
-                            <div className='mb-3'>
-                                <label 
-                                    htmlFor='email' 
-                                    className='form-label'
-                                    
-                                >Email</label>
-                                <input
-                                    type='email'
-                                    className='form-control'
-                                    id='email'
+                            <form onSubmit={handleCoworkerSubmit}>
+                                <div className='mb-3'>
+                                    <label htmlFor='email' className='form-label'>Email</label>
+                                    <input
+                                        type='email'
+                                        className='form-control'
+                                        id='email'
+                                        placeholder='Enter email'
+                                        required
+                                        onChange={(e) => setEmail(e.target.value)}
+                                    />
+                                </div>
 
-                                    placeholder='Enter email'
-                                    required
-                                    onChange={(e) => {setEmail}}
-                                />
-                            </div>
-
-                            <div className='d-grid'>
-                                <button type='submit' className='btn btn-primary btn-lg'>Confirm</button>
-                            </div>
-                        </form>
+                                <div className='d-grid'>
+                                    <button type='submit' className='btn btn-primary btn-lg'>Confirm</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
+
     );
 
 

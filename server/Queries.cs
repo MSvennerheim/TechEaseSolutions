@@ -179,13 +179,16 @@ public class Queries
         return "";
     }
 
-    public async Task<List<User>> GetEmployees()
+    public async Task<List<User>> GetEmployees(string company)
     {
         var users = new List<User>();
 
-        await using (var cmd = _db.CreateCommand(
-                         "SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where (admin = 'true' or csrep = 'true')"))
+        const string sql =
+            @"SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where name = $1";
+        await using (var cmd = _db.CreateCommand(sql))
         {
+            cmd.Parameters.AddWithValue(company);
+            
             await using var reader = await cmd.ExecuteReaderAsync();
         
             while (await reader.ReadAsync())
@@ -195,7 +198,7 @@ public class Queries
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     Email = reader.GetString(reader.GetOrdinal("email")),
                     CompanyName = reader.GetString(reader.GetOrdinal("name")),
-                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
+                    CsRep = reader.GetBoolean(reader.GetOrdinal("csrep")),
                     IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
                 };
 
@@ -232,7 +235,7 @@ public class Queries
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     Email = reader.GetString(reader.GetOrdinal("email")),
                     Company = reader.GetInt32(reader.GetOrdinal("company")),
-                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
+                    CsRep = reader.GetBoolean(reader.GetOrdinal("csrep")),
                     IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin")),
                     CompanyName = reader.GetString(reader.GetOrdinal("name"))
                 };

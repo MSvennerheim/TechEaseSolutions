@@ -70,8 +70,15 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
 
 app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
 {
-    var employees = await queries.GetEmployees();
-    return employees;
+    string company = context.Session.GetString("companyName");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
+    if (isAdmin)
+    {
+            var employees = await queries.GetEmployees(company);
+            return employees;
+    }
+    return null;
 });
 
 
@@ -136,6 +143,8 @@ app.MapPost("/api/login", async (HttpContext context) =>
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
+            context.Session.SetString("CsRep", user.CsRep.ToString());
+            context.Session.SetString("companyName", user.CompanyName);
 
             return Results.Ok(new { 
                 token = "test-token",
@@ -143,9 +152,9 @@ app.MapPost("/api/login", async (HttpContext context) =>
                     id = user.Id,
                     email = user.Email,
                     company = user.Company,
-                    isCustomerServiceUser = user.IsCustomerServiceUser,
                     isAdmin = user.IsAdmin,
-                    companyName = user.CompanyName
+                    companyName = user.CompanyName,
+                    csrep = user.CsRep
                 }
             });
         }
@@ -214,33 +223,7 @@ app.MapPost("/api/form", async (HttpContext context) =>
 
 app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
 {
-    try
-    {
-        using var reader = new StreamReader(context.Request.Body);
-        var body = await reader.ReadToEndAsync();
-        var ticketInformation= JsonSerializer.Deserialize<Ticket>(body);
 
-        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) ||
-            string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
-        {
-            return Results.BadRequest(new { message = "All fields have to be entered" });
-        }
-
-        if (ticketInformation != null)
-        {
-            await queries.CompanyName(ticketInformation);
-            await queries.customerTempUser(ticketInformation);
-            await queries.postNewTicket(ticketInformation);
-
-            return Results.Ok();
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error: {ex}");
-    }
-
-    return Results.BadRequest();
 });
 
 
