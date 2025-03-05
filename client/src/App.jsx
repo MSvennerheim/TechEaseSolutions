@@ -10,6 +10,7 @@ import Redigeramedarbetare from "./Pages/redigeramedarbetare.jsx";
 import ChatHistory from "./pages/Chat.jsx"
 import './index.css';
 import ProtectedRoute from './Components/ProtectedRoute.jsx';
+import customerLogin from "./Components/CustomerLogin.jsx";
 
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/redigeramedarbetare" element={<Redigeramedarbetare />} />
         <Route path="/redigeramall" element={<Redigeramall />} />
         <Route path="Chat/:chatId" element={<ChatHistory />} />
+        <Route path="/guestlogin/:chatId?email=:email" element={<customerLogin />}/>
       </Routes>
     </BrowserRouter>
   );
