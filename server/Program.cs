@@ -116,6 +116,73 @@ app.MapGet("/api/arbetarsida/", async (HttpContext context) =>
     return "no access";
 });
 
+app.MapPost("/api/guestLogin", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var loginData = JsonSerializer.Deserialize<LoginRequest>(body);
+
+    try
+    {
+        
+    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId != null)
+    {
+        return Results.BadRequest(new { message = "Email and chat are required" });
+    }
+
+    string decodedEmail = Uri.UnescapeDataString(loginData.Email);
+    var user = await queries.ValidateTempUser(decodedEmail, loginData.ChatId);
+    if (user != null)
+    {
+        var authProperties = new AuthenticationProperties
+        { 
+            IsPersistent = true, 
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
+        };
+            
+            await context.SignInAsync(
+                "CookieAuth",  
+                new ClaimsPrincipal(new ClaimsIdentity(
+                    new[] {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Email, user.Email), 
+                        new Claim("IsAdmin", user.IsAdmin.ToString()), 
+                        new Claim("CsRep", user.CsRep.ToString()) ,
+                    },
+                    "CookieAuth")),
+                authProperties
+            );
+            context.Session.SetString("UserId", user.Id.ToString());
+            context.Session.SetString("UserEmail", user.Email);
+            context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
+            context.Session.SetString("CsRep", user.CsRep.ToString());
+            context.Session.SetString("CompanyName", user.CompanyName);
+            context.Session.SetInt32("ChatId", user.ChatId);
+
+            
+            
+            // Retunerar inloggningsdata
+            return Results.Ok(new { 
+                token = "test-token",
+                user = new {
+                    id = user.Id,
+                    email = user.Email,
+                    company = user.Company,
+                    companyName = user.CompanyName,
+                    csRep = user.CsRep,
+                    isAdmin = user.IsAdmin,
+                    chatId = user.ChatId
+                }
+            }); 
+    }
+    return Results.Unauthorized(); 
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+        return Results.BadRequest(new { message = "An error occurred during login." });
+    }
+});
 
 
 // API_endpoint för att kunna logga in
@@ -257,6 +324,8 @@ public class LoginRequest
 {
     public string Email { get; set; }
     public string Password { get; set; }
+    
+    public int ChatId { get; set; }
 }
 
 public class ChatData

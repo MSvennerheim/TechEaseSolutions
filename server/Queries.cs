@@ -208,8 +208,41 @@ public class Queries
         // return empty string if we don't need to send confirmation
         return "";
     }
-    
-    
+
+    public async Task<User?> ValidateTempUser(string email, int chatId)
+    {
+        const string sql = @"
+            SELECT id, email, password, company, c.name
+            FROM users 
+            JOIN public.companies c on c.id = users.company
+            JOIN public.messages m on users.id = m.sender
+            WHERE email = @email AND chatid = @chatid
+            LIMIT 1";
+
+        await using var cmd = _db.CreateCommand(sql);
+        cmd.Parameters.AddWithValue("@email", email);
+        cmd.Parameters.AddWithValue("@chatid", chatId);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
+        {
+
+            var user = new User
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("id")),
+                Email = reader.GetString(reader.GetOrdinal("email")),
+                Company = reader.GetInt32(reader.GetOrdinal("company")),
+                CompanyName = reader.GetString(reader.GetOrdinal("name")),
+                CsRep = false,
+                IsAdmin = false
+            };
+            Console.WriteLine($"User from DB: {JsonSerializer.Serialize(user)}");
+            return user;
+        }
+        return null;
+    }
+
     public async Task<User?> ValidateUser(string email, string password)
     {
         const string sql = @"
