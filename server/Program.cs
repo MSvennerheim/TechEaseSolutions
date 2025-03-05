@@ -59,20 +59,37 @@ app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
     return companyDetails;
 });
 
-app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
+app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 {
-    var chatHistory = await queries.GetChatHistory(chatId);
-    return chatHistory;
+    
+    // as long as your session is logged in to the correct company you can access the chat. 
+    // if you're a customer query checks if you're the sender of a message in chat. 
+    
+    var user = new User
+    {
+        Email = context.Session.GetString("UserEmail"),
+        CompanyName = context.Session.GetString("CompanyName"),
+        CsRep = Convert.ToBoolean(context.Session.GetString("CsRep")),
+        ChatId = chatId
+    }; 
+    
+        var chatHistory = await queries.GetChatHistory(user);
+        return chatHistory;
+
 });
 
-app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
+app.MapPost("/api/ChatResponse/", async (HttpContext context) =>
 {
-
+    
     var chatId = int.Parse(context.Request.RouteValues["chatId"]?.ToString());
     using var reader = new StreamReader(context.Request.Body);
     var body = await reader.ReadToEndAsync();
     var chatData = JsonSerializer.Deserialize<ChatData>(body);
+    
     chatData.chatId = chatId;
+    chatData.email = context.Session.GetString("UserEmail");
+    chatData.csrep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+
     // deserialize json before putting into WriteChatToDB
     // (needed here since chatId is needed for emailConfirmationOnAnswer)
 
@@ -87,11 +104,19 @@ app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 });
 
 
-app.MapGet("/api/arbetarsida/{company}", async (string company) =>
+app.MapGet("/api/arbetarsida/", async (HttpContext context) =>
 {
-    var chats = await queries.GetChatsForCsRep(company);
-    return chats;
+    string company = context.Session.GetString("CompanyName");
+    bool csRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    if (csRep)
+    {
+        var chats = await queries.GetChatsForCsRep(company);
+        return chats;
+    }
+    return "no access";
 });
+
+
 
 // API_endpoint för att kunna logga in
 app.MapPost("/api/login", async (HttpContext context) =>
@@ -128,7 +153,9 @@ app.MapPost("/api/login", async (HttpContext context) =>
                     new[] {
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),  //sparar användarens Id
                         new Claim(ClaimTypes.Email, user.Email), // sparar användarens  e-post 
-                        new Claim("IsAdmin", user.IsAdmin.ToString()) // sparar om användaren är admin eller inte 
+                        new Claim("IsAdmin", user.IsAdmin.ToString()), // sparar om användaren är admin eller inte
+                        new Claim("CsRep", user.CsRep.ToString()) // sparar om användaren är admin eller inte
+
                     },
                     "CookieAuth")),
                 authProperties
@@ -137,6 +164,8 @@ app.MapPost("/api/login", async (HttpContext context) =>
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
+            context.Session.SetString("CsRep", user.CsRep.ToString());
+            context.Session.SetString("CompanyName", user.CompanyName);
 
             
             
@@ -147,7 +176,8 @@ app.MapPost("/api/login", async (HttpContext context) =>
                     id = user.Id,
                     email = user.Email,
                     company = user.Company,
-                    isCustomerServiceUser = user.IsCustomerServiceUser,
+                    companyName = user.CompanyName,
+                    csRep = user.CsRep,
                     isAdmin = user.IsAdmin 
                 }
             });

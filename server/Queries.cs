@@ -13,23 +13,53 @@ public class Queries
     {
         _db = db;
     }
-
-    public async Task<string> GetChatHistory(int chat) {
+    
+    
+    public async Task<string> GetChatHistory(User user) {
         
         // get chat history for a specific chat using chatid as a JSON file
         
         var messages = new List<object>();
 
+        if (!user.CsRep)
+        {
+            // Check if customer has any messages in chat, if not kick them out  
+            
+            const string OriginalSender = @"SELECT count(chatid) 
+                FROM messages
+                JOIN users ON messages.sender = users.id
+                JOIN public.companies c on c.id = users.company
+                WHERE chatid = @chatid AND c.name = @company AND email = @email";
+            await using (var cmd = _db.CreateCommand(OriginalSender))
+            {
+                cmd.Parameters.AddWithValue("@chatid", user.ChatId);
+                cmd.Parameters.AddWithValue("@company", user.CompanyName);
+                cmd.Parameters.AddWithValue("@email", user.Email);
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        if (1 < reader.GetInt32(0))
+                        {
+                            return "no access";
+                        }
+                    }
+                }
+            }
+        }
+        
         const string ChatHistory =
             @"SELECT message, email, timestamp
                 FROM messages 
                 JOIN users ON messages.sender = users.id 
-                WHERE chatid = @chatid
-                ORDER BY timestamp ";
+                JOIN public.companies c on c.id = users.company
+                WHERE chatid = @chatid AND c.name = @company
+                ORDER BY timestamp";
         
         await using (var cmd = _db.CreateCommand(ChatHistory))
         {
-            cmd.Parameters.AddWithValue("@chatid", chat);
+            cmd.Parameters.AddWithValue("@chatid", user.ChatId);
+            cmd.Parameters.AddWithValue("@company", user.CompanyName);
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
@@ -183,8 +213,9 @@ public class Queries
     public async Task<User?> ValidateUser(string email, string password)
     {
         const string sql = @"
-            SELECT id, email, password, company, csrep, admin
+            SELECT id, email, password, company, c.name, csrep, admin
             FROM users 
+            JOIN public.companies c on c.id = users.company
             WHERE email = @email";
 
         await using var cmd = _db.CreateCommand(sql);
@@ -204,7 +235,8 @@ public class Queries
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     Email = reader.GetString(reader.GetOrdinal("email")),
                     Company = reader.GetInt32(reader.GetOrdinal("company")),
-                    IsCustomerServiceUser = reader.GetBoolean(reader.GetOrdinal("csrep")),
+                    CompanyName = reader.GetString(reader.GetOrdinal("name")),
+                    CsRep = reader.GetBoolean(reader.GetOrdinal("csrep")),
                     IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
                 };
                 Console.WriteLine($"User from DB: {JsonSerializer.Serialize(user)}");
@@ -336,6 +368,8 @@ public class User
     public int Id { get; set; }
     public string Email { get; set; }
     public int Company { get; set; }
-    public bool IsCustomerServiceUser { get; set; }
+    public string CompanyName { get; set; }
+    public bool CsRep { get; set; }
     public bool IsAdmin { get; set; }
+    public int ChatId { get; set; }
 }
