@@ -70,11 +70,23 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         Email = context.Session.GetString("UserEmail"),
         CompanyName = context.Session.GetString("CompanyName"),
         CsRep = Convert.ToBoolean(context.Session.GetString("CsRep")),
-        ChatId = chatId
-    }; 
-    
+        ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
+    };
+
+    Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    if (chatId == user.ChatId && !user.CsRep)
+    {
         var chatHistory = await queries.GetChatHistory(user);
         return chatHistory;
+    } 
+    if (user.CsRep)
+    {
+        user.ChatId = chatId;
+        var chatHistory = await queries.GetChatHistory(user);
+        return chatHistory;
+    } 
+    
+    return "no chat found";
 
 });
 
@@ -125,13 +137,14 @@ app.MapPost("/api/guestLogin", async (HttpContext context) =>
     try
     {
         
-    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId != null)
+    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
     {
         return Results.BadRequest(new { message = "Email and chat are required" });
     }
 
     string decodedEmail = Uri.UnescapeDataString(loginData.Email);
-    var user = await queries.ValidateTempUser(decodedEmail, loginData.ChatId);
+    Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
+    var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
     if (user != null)
     {
         var authProperties = new AuthenticationProperties
@@ -325,7 +338,7 @@ public class LoginRequest
     public string Email { get; set; }
     public string Password { get; set; }
     
-    public int ChatId { get; set; }
+    public string ChatId { get; set; }
 }
 
 public class ChatData

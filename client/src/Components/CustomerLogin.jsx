@@ -24,7 +24,7 @@ export default function CustomerLogin() {
         }
 
         try {
-            const response = await fetch('/api/guestlogin', {
+            const response = await fetch('/api/guestLogin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

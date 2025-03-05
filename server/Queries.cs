@@ -28,7 +28,7 @@ public class Queries
             const string OriginalSender = @"SELECT count(chatid) 
                 FROM messages
                 JOIN users ON messages.sender = users.id
-                JOIN public.companies c on c.id = users.company
+                JOIN public.companies c on c.id = messages.company
                 WHERE chatid = @chatid AND c.name = @company AND email = @email";
             await using (var cmd = _db.CreateCommand(OriginalSender))
             {
@@ -52,7 +52,7 @@ public class Queries
             @"SELECT message, email, timestamp
                 FROM messages 
                 JOIN users ON messages.sender = users.id 
-                JOIN public.companies c on c.id = users.company
+                JOIN public.companies c on c.id = messages.company
                 WHERE chatid = @chatid AND c.name = @company
                 ORDER BY timestamp";
         
@@ -212,7 +212,7 @@ public class Queries
     public async Task<User?> ValidateTempUser(string email, int chatId)
     {
         const string sql = @"
-            SELECT id, email, password, company, c.name
+            SELECT users.id, email, password, users.company, c.name, chatid
             FROM users 
             JOIN public.companies c on c.id = users.company
             JOIN public.messages m on users.id = m.sender
@@ -235,9 +235,11 @@ public class Queries
                 Company = reader.GetInt32(reader.GetOrdinal("company")),
                 CompanyName = reader.GetString(reader.GetOrdinal("name")),
                 CsRep = false,
-                IsAdmin = false
+                IsAdmin = false,
+                ChatId = reader.GetInt32(reader.GetOrdinal("chatid"))
             };
             Console.WriteLine($"User from DB: {JsonSerializer.Serialize(user)}");
+            Console.WriteLine(user.ChatId);
             return user;
         }
         return null;
@@ -246,7 +248,7 @@ public class Queries
     public async Task<User?> ValidateUser(string email, string password)
     {
         const string sql = @"
-            SELECT id, email, password, company, c.name, csrep, admin
+            SELECT users.id, email, password, company, c.name, csrep, admin
             FROM users 
             JOIN public.companies c on c.id = users.company
             WHERE email = @email";
