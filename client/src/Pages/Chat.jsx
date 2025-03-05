@@ -23,7 +23,7 @@ const ChatHistory = () => {
   const updateSite = () => {
     setTimeout(() => {
       setUpdateTicker(updateTicker + 1)
-    }, 100);
+    }, 1000);
   }
 
   return (
