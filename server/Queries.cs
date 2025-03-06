@@ -358,4 +358,80 @@ public class Queries
         }
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
+    public async Task<bool> CreateNewCsRep(string email, string companyName, bool isAdmin)
+{
+    
+    string tempToken = Guid.NewGuid().ToString();
+    DateTime tokenExpiry = DateTime.Now.AddHours(24);
+    
+    int companyId = 0;
+    
+    
+    const string getCompanyId = "SELECT id FROM companies WHERE name = @companyName";
+    await using (var cmd = _db.CreateCommand(getCompanyId))
+    {
+        cmd.Parameters.AddWithValue("@companyName", companyName);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            companyId = reader.GetInt32(0);
+        }
+        else
+        {
+            return false; 
+        }
+    }
+    
+    
+    const string checkUser = "SELECT id FROM users WHERE email = @email AND company = @companyId";
+    await using (var cmd = _db.CreateCommand(checkUser))
+    {
+        cmd.Parameters.AddWithValue("@email", email);
+        cmd.Parameters.AddWithValue("@companyId", companyId);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return false; 
+        }
+    }
+    
+    
+    const string insertUser = @"
+        INSERT INTO users (email, password, csrep, admin, company, reset_token, token_expiry) 
+        VALUES (@email, '', @csrep, @admin, @companyId, @resetToken, @tokenExpiry)";
+    await using (var cmd = _db.CreateCommand(insertUser))
+    {
+        cmd.Parameters.AddWithValue("@email", email);
+        cmd.Parameters.AddWithValue("@csrep", true); 
+        cmd.Parameters.AddWithValue("@admin", isAdmin);
+        cmd.Parameters.AddWithValue("@companyId", companyId);
+        cmd.Parameters.AddWithValue("@resetToken", tempToken);
+        cmd.Parameters.AddWithValue("@tokenExpiry", tokenExpiry);
+        
+        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
 }
+
+public async Task<bool> VerifyResetTokenAndSetPassword(string email, string token, string newPassword)
+{
+    const string sql = @"
+        UPDATE users 
+        SET password = @password, reset_token = NULL, token_expiry = NULL
+        WHERE email = @email AND reset_token = @token AND token_expiry > @now
+        RETURNING id";
+        
+    await using var cmd = _db.CreateCommand(sql);
+    cmd.Parameters.AddWithValue("@email", email);
+    cmd.Parameters.AddWithValue("@token", token);
+    cmd.Parameters.AddWithValue("@password", newPassword);
+    cmd.Parameters.AddWithValue("@now", DateTime.Now);
+    
+    await using var reader = await cmd.ExecuteReaderAsync();
+    return await reader.ReadAsync(); 
+}
+   
+    
+    
+}
+

@@ -246,3 +246,10 @@ public class ChatData
     public int chatId { get; set; }
     public bool csrep { get; set; }
 }
+
+public class NewCsRepRequest
+{
+    public string Email {get; set;}
+    public string CompanyName { get; set;}
+    public bool IsAdmin { get; set;}
+}
