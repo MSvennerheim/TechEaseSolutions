@@ -44,6 +44,7 @@ function Home() {
                   id="options"
                   value={selectedOption}
                   onChange={(e) => setOption(e.target.value)}
+                  required
               >
                 <option value="">--Välj ett ämne--</option>
                 {data.length > 0 ? (
@@ -64,6 +65,7 @@ function Home() {
                     value={email}
                     placeholder="Enter your Email..."
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                 />
               </div>
               <div className="description">
@@ -73,6 +75,7 @@ function Home() {
                     value={description}
                     placeholder="Describe your issue..."
                     onChange={(e) => setDescription(e.target.value)}
+                    required
                 />
               </div>
               <button id="skicka_ärende" type="submit">

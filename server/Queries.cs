@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using MailKit.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace server;
 using Npgsql;
 using System.Text.Json;
+
 public class Queries
 {
     private NpgsqlDataSource _db;
@@ -13,18 +15,19 @@ public class Queries
     {
         _db = db;
     }
-    
-    
-    public async Task<string> GetChatHistory(User user) {
-        
+
+
+    public async Task<string> GetChatHistory(User user)
+    {
+
         // get chat history for a specific chat using chatid as a JSON file
-        
+
         var messages = new List<object>();
 
         if (!user.CsRep)
         {
             // Check if customer has any messages in chat, if not kick them out  
-            
+
             const string OriginalSender = @"SELECT count(chatid) 
                 FROM messages
                 JOIN users ON messages.sender = users.id
@@ -47,7 +50,7 @@ public class Queries
                 }
             }
         }
-        
+
         const string ChatHistory =
             @"SELECT message, email, timestamp
                 FROM messages 
@@ -55,7 +58,7 @@ public class Queries
                 JOIN public.companies c on c.id = messages.company
                 WHERE chatid = @chatid AND c.name = @company
                 ORDER BY timestamp";
-        
+
         await using (var cmd = _db.CreateCommand(ChatHistory))
         {
             cmd.Parameters.AddWithValue("@chatid", user.ChatId);
@@ -73,7 +76,8 @@ public class Queries
                 }
             }
         }
-        return JsonSerializer.Serialize(messages, new JsonSerializerOptions {WriteIndented = true});
+
+        return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });
     }
 
     public async Task<string> GetChatsForCsRep(string company, bool allChats)
@@ -133,12 +137,12 @@ public class Queries
     {
         // first get id for user from email and company from name, create timestamp and write to db.
         // if sender is csrep also return mailadress for sending to that ticket has been updated 
-        
+
         int senderId = 0; // just to get it to run, make a check so these are not 0 before writing to db
         int companyId = 0;
         int caseType = 0;
         string company = "";
-        
+
         // TODO: rewrite these following queries in a nicer way...
 
         const string getChatdataInfo = @"SELECT casetype, name
@@ -159,9 +163,9 @@ public class Queries
                 }
             }
         }
-            
-            
-            
+
+
+
         const string getId = @"SELECT users.id, c.id
                                     FROM users
                                     JOIN public.companies c on users.company = c.id
@@ -180,7 +184,7 @@ public class Queries
                 }
             }
         }
-        
+
         DateTime currentTime = DateTime.Now;
         const string writeToDB = @"INSERT INTO messages (message, company, casetype, sender, chatid, timestamp)
                                         values (@message, @companyId, @casetype, @senderId, @chatId, @currentTime )";
@@ -194,7 +198,7 @@ public class Queries
             cmd.Parameters.AddWithValue("@currentTime", currentTime);
             await using var reader = await cmd.ExecuteReaderAsync();
         }
-        
+
         // if sender is csrep get email for customer and send them a confirmation
 
         if (chatData.csrep)
@@ -206,7 +210,7 @@ public class Queries
                                                 WHERE u.csrep = false
                                                 AND chatid = @chatId
                                                 LIMIT 1";
-            
+
             await using (var cmd = _db.CreateCommand(getCustomerMail))
             {
                 cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
@@ -222,8 +226,10 @@ public class Queries
                     }
                 }
             }
+
             return customerEmail;
         }
+
         // return empty string if we don't need to send confirmation
         return "";
     }
@@ -261,7 +267,38 @@ public class Queries
             Console.WriteLine(user.ChatId);
             return user;
         }
+
         return null;
+    }
+
+    public async Task<List<User>> GetEmployees(string company)
+    {
+        var users = new List<User>();
+
+        const string sql =
+            @"SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where name = @company";
+        await using (var cmd = _db.CreateCommand(sql))
+        {
+            cmd.Parameters.AddWithValue("@company", company);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var user = new User
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("id")),
+                    Email = reader.GetString(reader.GetOrdinal("email")),
+                    CompanyName = reader.GetString(reader.GetOrdinal("name")),
+                    CsRep = reader.GetBoolean(reader.GetOrdinal("csrep")),
+                    IsAdmin = reader.GetBoolean(reader.GetOrdinal("admin"))
+                };
+
+                users.Add(user);
+            }
+        }
+
+        return users;
     }
 
     public async Task<User?> ValidateUser(string email, string password)
@@ -276,12 +313,12 @@ public class Queries
         cmd.Parameters.AddWithValue("email", email);
 
         await using var reader = await cmd.ExecuteReaderAsync();
-        
+
         if (await reader.ReadAsync())
         {
             var storedPassword = reader.GetString(reader.GetOrdinal("password"));
-            
-            
+
+
             if (password == storedPassword)
             {
                 var user = new User
@@ -297,14 +334,16 @@ public class Queries
                 return user;
             }
         }
-        
+
         return null;
     }
+
     public async Task customerTempUser(Ticket ticket)
     {
         //Make sure that you can't have duplicate emails on the same company id in the database.
         await using (var checkCmd =
-                     _db.CreateCommand("SELECT id, email, company FROM users where email = @email AND company = @company"))
+                     _db.CreateCommand(
+                         "SELECT id, email, company FROM users where email = @email AND company = @company"))
         {
             checkCmd.Parameters.AddWithValue("@email", ticket.email);
             checkCmd.Parameters.AddWithValue("@company", ticket.companyId);
@@ -312,17 +351,18 @@ public class Queries
             {
                 if (await reader.ReadAsync())
                 {
-                    if (reader.HasRows) 
-                    { 
-                        ticket.id = reader.GetInt32(reader.GetOrdinal("id")); 
+                    if (reader.HasRows)
+                    {
+                        ticket.id = reader.GetInt32(reader.GetOrdinal("id"));
                         return;
                     }
                 }
 
             }
         }
-        
-        await using (var cmd = _db.CreateCommand("INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4) RETURNING id;"))
+
+        await using (var cmd = _db.CreateCommand(
+                         "INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4) RETURNING id;"))
         {
             cmd.Parameters.AddWithValue(ticket.email);
             cmd.Parameters.AddWithValue(false);
@@ -345,7 +385,7 @@ public class Queries
         {
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
-                
+
                 // find the highest number, if no row exist. Set chatid to 1.
                 if (await reader.ReadAsync())
                 {
@@ -357,9 +397,9 @@ public class Queries
                 }
             }
         }
-        
+
         DateTime now = DateTime.Now;
-        
+
         //query to insert collected data in to the message table, (create a ticket)
         await using (var cmd = _db.CreateCommand(
                          "INSERT INTO messages (message, casetype, sender, chatid, timestamp, company) VALUES ($1, $2, $3, $4, $5, $6)"))
@@ -369,7 +409,7 @@ public class Queries
             cmd.Parameters.AddWithValue(ticket.id);
             cmd.Parameters.AddWithValue(ticket.chatid);
             cmd.Parameters.AddWithValue(now);
-            
+
             cmd.Parameters.AddWithValue(ticket.companyId);
             await cmd.ExecuteNonQueryAsync();
         }
@@ -395,10 +435,11 @@ public class Queries
     {
         var caseTypesList = new List<object>();
 
-        await using (var cmd = _db.CreateCommand("SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @name"))
+        await using (var cmd = _db.CreateCommand(
+                         "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @name"))
         {
             cmd.Parameters.AddWithValue("@name", name);
-        
+
             await using (var reader = await cmd.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
@@ -411,19 +452,31 @@ public class Queries
                 }
             }
         }
+
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
-}
 
+    public async Task PostNewCsRep(int company, string email)
+    {
+        await using (var cmd = _db.CreateCommand(
+                         "INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4)"))
+        {
+            cmd.Parameters.AddWithValue(email);
+            cmd.Parameters.AddWithValue(true);
+            cmd.Parameters.AddWithValue(false);
+            cmd.Parameters.AddWithValue(company);
+            await cmd.ExecuteNonQueryAsync();
+        }
+    }
 
-
-public class User
-{
-    public int Id { get; set; }
-    public string Email { get; set; }
-    public int Company { get; set; }
-    public string CompanyName { get; set; }
-    public bool CsRep { get; set; }
-    public bool IsAdmin { get; set; }
-    public int ChatId { get; set; }
+    public class User
+    {
+        public int Id { get; set; }
+        public string Email { get; set; }
+        public int Company { get; set; }
+        public string CompanyName { get; set; }
+        public bool CsRep { get; set; }
+        public bool IsAdmin { get; set; }
+        public int ChatId { get; set; }
+    }
 }

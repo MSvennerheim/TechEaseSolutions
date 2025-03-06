@@ -42,11 +42,9 @@ export function useLogin() {
       if (response.ok) {
         console.log('Login Successful. User:', data.user); // logga användaren som loggat in
         if (data.user.isAdmin) {
-          navigate(`/admin/`);
-        } else if (data.user.csRep) {
-          navigate(`/arbetarsida/`);
+          navigate(`/admin`);
         } else {
-          navigate(`/chat/${data.user.chat}`)
+          navigate(`/arbetarsida`);
         }
       } else {
         setError(data.message || 'Login failed. Please check your credentials.');
