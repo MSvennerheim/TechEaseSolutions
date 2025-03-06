@@ -6,10 +6,11 @@ const Arbetarsida = () => {
   const [data, setData] = useState([])
   useEffect(() => {
     const GetAllChats = async () => {
-      const response = await fetch(`/api/arbetarsida/${company}`)
+      const response = await fetch(`/api/Arbetarsida`)
       const responseData = await response.json()
       setData(responseData)
       console.log(responseData)
+      console.log(data)
     }
     GetAllChats()
   }, [])
