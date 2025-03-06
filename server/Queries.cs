@@ -76,7 +76,7 @@ public class Queries
         return JsonSerializer.Serialize(messages, new JsonSerializerOptions {WriteIndented = true});
     }
 
-    public async Task<string> GetChatsForCsRep(string company)
+    public async Task<string> GetChatsForCsRep(string company, bool allChats)
     {
         var chats = new List<object>();
 
@@ -87,6 +87,8 @@ public class Queries
             JOIN companies ON messages.company = companies.id
             WHERE companies.name = @company
             ORDER BY chatid, timestamp DESC";
+        
+        
         
         
         await using (var cmd = _db.CreateCommand(sql))
@@ -107,7 +109,24 @@ public class Queries
                 }
             }
         }
-        return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
+
+        // return everything if box is checked in frontend, else sort open tickets
+        
+        if (allChats)
+        {
+            return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
+
+        }
+        var sorterdChats = new List<object>();
+
+        foreach (dynamic chat in chats)
+        {
+            if (!chat.csrep)
+            {
+                sorterdChats.Add(chat);
+            }
+        }
+        return JsonSerializer.Serialize(sorterdChats, new JsonSerializerOptions {WriteIndented = true});
     }
 
     public async Task<string> WriteChatToDB(ChatData chatData)

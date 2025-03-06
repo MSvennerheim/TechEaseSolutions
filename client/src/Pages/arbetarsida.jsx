@@ -4,22 +4,23 @@ import { Link, useParams } from "react-router-dom";
 const Arbetarsida = () => {
   const [data, setData] = useState([])
   const [updateTicker, setUpdateTicker] = useState(0)
+  const [allChats, setAllChats] = useState(false)
 
 
   useEffect(() => {
-    const GetAllChats = async () => {
+    const GetChats = async () => {
       const response = await fetch(`/api/arbetarsida/`, {
         method: "POST",
             headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ checked: isChecked }),
+        body: JSON.stringify({ getAllChats: allChats }),
       })
       const responseData = await response.json()
       setData(responseData)
       console.log(responseData)
     }
-    GetAllChats()
+    GetChats()
   }, [updateTicker])
 
   const updateSite = () => {
@@ -28,8 +29,8 @@ const Arbetarsida = () => {
     }, 1000);
   }
 
-  const handleCheckboxChange = (event) => {
-    const isChecked = event.target.checked;
+  const getAllChats = (event) => {
+    setAllChats(event.target.checked);
     updateSite()
   }
 
@@ -38,7 +39,7 @@ const Arbetarsida = () => {
   return (
     <div>
       <div>
-        <input type={"checkbox"} onChange={handleCheckboxChange}/>
+        <input type={"checkbox"} onChange={getAllChats}/> <p>Get all chats?</p>
       </div>
       {data.map((chats, index) => (
         <div key={index} className={chats.csrep ? "openTicket" : "closedTicket"}> {/*Should be some kind of marker for when a ticket is closed here(grayed out?)*/}

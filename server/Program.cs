@@ -116,13 +116,17 @@ app.MapPost("/api/ChatResponse/", async (HttpContext context) =>
 });
 
 
-app.MapGet("/api/arbetarsida/", async (HttpContext context) =>
+app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
 {
     string company = context.Session.GetString("CompanyName");
     bool csRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var sortingObject = JsonSerializer.Deserialize<ChatSortingObject>(body);
+    
     if (csRep)
     {
-        var chats = await queries.GetChatsForCsRep(company);
+        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats);
         return chats;
     }
     return "no access";
@@ -351,3 +355,7 @@ public class ChatData
     public bool csrep { get; set; }
 }
 
+public class ChatSortingObject
+{
+    public bool getAllChats { get; set; }
+}
