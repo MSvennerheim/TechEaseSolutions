@@ -113,7 +113,12 @@ function Redigeramedarbetare() {
                                 </div>
 
                                 <div className='d-grid'>
-                                    <button type='submit' className='btn btn-primary btn-lg' onClick={() => {fetchCoWorkers()}}>Confirm</button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary btn-lg"
+                                        onClick={() => {
+                                            fetchCoWorkers();
+                                        }}>Confirm</button>
                                 </div>
                             </form>
                         </div>

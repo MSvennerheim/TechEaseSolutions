@@ -98,8 +98,9 @@ app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
     }
 });
 
-app.MapGet("/api/arbetarsida/{company}", async (string company) =>
+app.MapGet("/api/arbetarsida", async (HttpContext context) =>
 {
+    var company = context.Session.GetString("companyName");
     var chats = await queries.GetChatsForCsRep(company);
     return chats;
 });
