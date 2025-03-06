@@ -73,7 +73,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
     };
 
-    Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
     if (chatId == user.ChatId && !user.CsRep)
     {
         var chatHistory = await queries.GetChatHistory(user);
@@ -90,7 +90,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 
 });
 
-app.MapPost("/api/ChatResponse/", async (HttpContext context) =>
+app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
     
     var chatId = int.Parse(context.Request.RouteValues["chatId"]?.ToString());
