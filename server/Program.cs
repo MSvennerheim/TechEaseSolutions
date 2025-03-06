@@ -142,6 +142,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
 
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
+            context.Session.SetInt32("company", user.Company);
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
             context.Session.SetString("CsRep", user.CsRep.ToString());
             context.Session.SetString("companyName", user.CompanyName);
@@ -223,10 +224,35 @@ app.MapPost("/api/form", async (HttpContext context) =>
 
 app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
 {
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var user = JsonSerializer.Deserialize<User>(body);
+    
+    Console.WriteLine("Program.cs");
+    int? Company = context.Session.GetInt32("company");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    
 
+    Console.WriteLine($"Company ID: {Company}, isAdmin: {isAdmin}");
+
+    if (Company == null)
+    {
+        return Results.BadRequest("Company ID is required.");
+    }
+
+    if (string.IsNullOrWhiteSpace(user.Email))
+    {
+        return Results.BadRequest("Email is required.");
+    }
+
+    if (isAdmin)
+    {
+        await queries.PostNewCsRep(Company.Value, user.Email);
+        return Results.Ok("Customer support rep added successfully.");
+    }
+
+    return Results.Forbid();
 });
-
-
 
 
 app.Run();

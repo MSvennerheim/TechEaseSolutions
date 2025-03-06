@@ -8,48 +8,56 @@ function Redigeramedarbetare() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isVisible, setIsVisible] = useState(false);
-    const [email, setEmail] = useState('');
+    const [Email, setEmail] = useState('');
+    const [formSubmitted, setformSubmitted] = useState(0)
+
+    const fetchCoWorkers = async () => {
+        console.log("useEffect is called.")
+        try {
+            const response = await fetch(`/api/GetCoWorker`);
+            if (!response.ok) throw new Error("Failed to fetch Employees");
+
+            const responseData = await response.json();
+            const data = responseData;
+            console.log(data)
+            if (responseData && typeof responseData === "object" && !Array.isArray(responseData)) {
+                setData([responseData]);
+
+            } else if (Array.isArray(responseData)) {
+                setData(responseData);
+            } else {
+                console.warn("Unexpected response format:", responseData);
+                setData([]);
+            }
+        } catch (error) {
+            console.error("An error has occurred:", error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     useEffect(() => {
-        const fetchCoWorkers = async () => {
-            try {
-                const response = await fetch(`/api/GetCoWorker`);
-                if (!response.ok) throw new Error("Failed to fetch Employees");
-
-                const responseData = await response.json();
-                
-                if (responseData && typeof responseData === "object" && !Array.isArray(responseData)) {
-                    setData([responseData]);
-                } else if (Array.isArray(responseData)) {
-                    setData(responseData);
-                } else {
-                    console.warn("Unexpected response format:", responseData);
-                    setData([]);
-                }
-            } catch (error) {
-                console.error("An error has occurred:", error);
-                setError(error.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchCoWorkers();
     }, []);
-    
-    const handleCoworkerSubmit = async () => {
+
+    const handleCoworkerSubmit = async (e) => {
+        e.preventDefault();
+        console.log(Email)
         const response = await fetch('/api/NewCustomerSupport', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                email,
-                
+                Email
             }),
         });
-    }
+    };
+    
 
+    
     const newCoworkerToggle = () => {
         setIsVisible(!isVisible);
     };
@@ -65,20 +73,18 @@ function Redigeramedarbetare() {
                     data.map((item, index) => (
                         <div key={index}>
                             <div className="Employee">
-                                <p><strong>Id:</strong> {item.id ?? "N/A"}</p>
-                                <p><strong>Email:</strong> {item.email ?? "N/A"}</p>
-                                <p><strong>Company:</strong> {item.companyName ?? "N/A"}</p>
-                                <p><strong>Customer Service User:</strong> {item.isCustomerServiceUser ? "Yes" : "No"}
-                                </p>
-                                <p><strong>Admin:</strong> {item.isAdmin ? "Yes" : "No"}</p>
+                                <p value={item.id}><strong>Id:</strong> {item.id ?? "N/A"}</p>
+                                <p value={item.email}><strong>Email:</strong> {item.email ?? "N/A"}</p>
+                                <p value={item.companyName}><strong>Company:</strong> {item.companyName ?? "N/A"}</p>
+                                <p value={item.csRep}><strong>Customer Service User:</strong> {item.csRep ? "Yes" : "No"}</p>
+                                <p value={item.isAdmin}><strong>Admin:</strong> {item.isAdmin ? "Yes" : "No"}</p>
                             </div>
                         </div>
                     ))
                 ) : (
                     <p>No employees found.</p>
                 )}
-
-                {/* Plus Button to Toggle Modal */}
+                
                 <div className="addEmployee" onClick={newCoworkerToggle}>
                     <img src={plusSign} className="plusImage"/>
                 </div>
@@ -96,17 +102,18 @@ function Redigeramedarbetare() {
                                 <div className='mb-3'>
                                     <label htmlFor='email' className='form-label'>Email</label>
                                     <input
-                                        type='email'
+                                        type='Email'
                                         className='form-control'
-                                        id='email'
+                                        id='Email'
                                         placeholder='Enter email'
+                                        value={Email}
                                         required
                                         onChange={(e) => setEmail(e.target.value)}
                                     />
                                 </div>
 
                                 <div className='d-grid'>
-                                    <button type='submit' className='btn btn-primary btn-lg'>Confirm</button>
+                                    <button type='submit' className='btn btn-primary btn-lg' onClick={() => {fetchCoWorkers()}}>Confirm</button>
                                 </div>
                             </form>
                         </div>
@@ -116,8 +123,6 @@ function Redigeramedarbetare() {
         </div>
 
     );
-
-
 }
 
 export default Redigeramedarbetare;

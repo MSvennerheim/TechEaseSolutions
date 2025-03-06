@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using MailKit.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -314,7 +315,6 @@ public class Queries
             cmd.Parameters.AddWithValue(ticket.id);
             cmd.Parameters.AddWithValue(ticket.chatid);
             cmd.Parameters.AddWithValue(now);
-            
             cmd.Parameters.AddWithValue(ticket.companyId);
             await cmd.ExecuteNonQueryAsync();
         }
@@ -357,5 +357,18 @@ public class Queries
             }
         }
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    public async Task PostNewCsRep(int company, string email)
+    {
+        await using (var cmd = _db.CreateCommand(
+                         "INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4)"))
+        {
+            cmd.Parameters.AddWithValue(email);
+            cmd.Parameters.AddWithValue(true);
+            cmd.Parameters.AddWithValue(false);
+            cmd.Parameters.AddWithValue(company);
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }

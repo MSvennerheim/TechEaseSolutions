@@ -338,6 +338,10 @@ h1{
 
 #newCoworker{
     position: absolute;
+    background-color: white;
+    z-index: 9000;
+    padding: 3%;
+    border-radius: 8px;
 }
 
 #CloseWindow{
