@@ -258,10 +258,10 @@ public class Queries
         var users = new List<User>();
 
         const string sql =
-            @"SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where name = $1";
+            @"SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where name = @company";
         await using (var cmd = _db.CreateCommand(sql))
         {
-            cmd.Parameters.AddWithValue(company);
+            cmd.Parameters.AddWithValue("@company", company);
 
             await using var reader = await cmd.ExecuteReaderAsync();
 

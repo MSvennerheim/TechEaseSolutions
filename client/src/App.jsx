@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from './Pages/LoginUI.jsx';
+import Redigeramedarbetare from './Pages/redigeramedarbetare.jsx';
 
 import Adminsida from "./Pages/Adminsida.jsx";
 import Arbetarsida from "./Pages/Arbetarsida.jsx";
@@ -7,7 +8,6 @@ import KontaktaOss from "./Pages/Kontaktaoss.jsx";
 import Confirmationsida from "./Pages/confirmationsida.jsx";
 import CaseEditor from "./Pages/CaseEditor.jsx";
 import ChatHistory from "./pages/Chat.jsx"
-import EditForm from "./pages/CaseEditor.jsx"
 import './index.css';
 import ProtectedRoute from './Components/ProtectedRoute.jsx';
 import CustomerLogin from "./Components/CustomerLogin.jsx";
@@ -30,7 +30,7 @@ export default function App() {
         {/* vet inte rikigt än Routes */}
           
 
-        <Route path="/CaseEditor" element={<EditForm />} />
+        <Route path="/CaseEditor" element={<CaseEditor />} />
         
 
         <Route path="/redigeramedarbetare" element={<Redigeramedarbetare />} />

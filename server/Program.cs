@@ -65,7 +65,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
     // as long as your session is logged in to the correct company you can access the chat. 
     // if you're a customer query checks if you're the sender of a message in chat. 
     
-    var user = new User
+    var user = new Queries.User
     {
         Email = context.Session.GetString("UserEmail"),
         CompanyName = context.Session.GetString("CompanyName"),
@@ -116,7 +116,7 @@ app.MapPost("/api/ChatResponse/", async (HttpContext context) =>
 
 app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
 {
-    string company = context.Session.GetString("companyName");
+    var company = context.Session.GetString("CompanyName");
     bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
     Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
     if (isAdmin)
@@ -346,7 +346,7 @@ app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
 {
     using var reader = new StreamReader(context.Request.Body);
     var body = await reader.ReadToEndAsync();
-    var user = JsonSerializer.Deserialize<User>(body);
+    var user = JsonSerializer.Deserialize<Queries.User>(body);
     
     Console.WriteLine("Program.cs");
     int? Company = context.Session.GetInt32("company");
