@@ -53,7 +53,6 @@ export function userInformation() {
         } catch (error) {
             setError("noob jävel")
         }
-        
     };
 
     return {

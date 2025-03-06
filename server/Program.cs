@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(1); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
+    options.IdleTimeout = TimeSpan.FromMinutes(10); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
     options.Cookie.HttpOnly = true; // Skyddar så att cookien inte kan nås via js
     options.Cookie.IsEssential = true; // Cookien krävs för att sessionen ska kunna fungera
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // cookien skickas bara via https
@@ -65,7 +65,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
     // as long as your session is logged in to the correct company you can access the chat. 
     // if you're a customer query checks if you're the sender of a message in chat. 
     
-    var user = new User
+    var user = new Queries.User
     {
         Email = context.Session.GetString("UserEmail"),
         CompanyName = context.Session.GetString("CompanyName"),
@@ -112,11 +112,22 @@ app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
         await newmail.emailConfirmationOnAnswer(emailConfirmationAdress, chatData.chatId);
         Console.WriteLine("Email sent placeholder to email: " + emailConfirmationAdress);
     }
-    
 });
 
+app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
+{
+    var company = context.Session.GetString("CompanyName");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
+    if (isAdmin)
+    {
+        var employees = await queries.GetEmployees(company);
+        return employees;
+    }
+    return null;
+});
 
-app.MapGet("/api/arbetarsida/", async (HttpContext context) =>
+app.MapGet("/api/arbetarsida", async (HttpContext context) =>
 {
     string company = context.Session.GetString("CompanyName");
     bool csRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
@@ -243,6 +254,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
              // lagrar användarensinformation i sessionen
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
+            context.Session.SetInt32("company", user.Company);
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
             context.Session.SetString("CsRep", user.CsRep.ToString());
             context.Session.SetString("CompanyName", user.CompanyName);
@@ -270,6 +282,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
         return Results.BadRequest(new { message = "An error occurred during login." });
     }
 });
+
 // API-endpoint för att se om användaren skulle ha en aktiv session
 app.MapGet("/api/check-session", (HttpContext context) =>
 {
@@ -302,13 +315,13 @@ app.MapPost("/api/form", async (HttpContext context) =>
         using var reader = new StreamReader(context.Request.Body);
         var body = await reader.ReadToEndAsync();
         var ticketInformation = JsonSerializer.Deserialize<Ticket>(body);
-        
-        
-        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) || string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
+
+        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) ||
+            string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
         {
             return Results.BadRequest(new { message = "All fields have to be entered" });
         }
-        
+
         if (ticketInformation != null)
         {
             await queries.CompanyName(ticketInformation);
@@ -325,8 +338,42 @@ app.MapPost("/api/form", async (HttpContext context) =>
     {
         Console.WriteLine($"Error: {ex}");
     }
+
     return Results.BadRequest();
 });
+
+app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var user = JsonSerializer.Deserialize<Queries.User>(body);
+    
+    Console.WriteLine("Program.cs");
+    int? Company = context.Session.GetInt32("company");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    
+
+    Console.WriteLine($"Company ID: {Company}, isAdmin: {isAdmin}");
+
+    if (Company == null)
+    {
+        return Results.BadRequest("Company ID is required.");
+    }
+
+    if (string.IsNullOrWhiteSpace(user.Email))
+    {
+        return Results.BadRequest("Email is required.");
+    }
+
+    if (isAdmin)
+    {
+        await queries.PostNewCsRep(Company.Value, user.Email);
+        return Results.Ok("Customer support rep added successfully.");
+    }
+
+    return Results.Forbid();
+});
+
 
 app.Run();
 Console.ReadLine();
@@ -337,7 +384,6 @@ public class LoginRequest
 {
     public string Email { get; set; }
     public string Password { get; set; }
-    
     public string ChatId { get; set; }
 }
 

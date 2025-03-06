@@ -6,7 +6,7 @@ const Arbetarsida = () => {
   const [data, setData] = useState([])
   useEffect(() => {
     const GetAllChats = async () => {
-      const response = await fetch(`/api/arbetarsida/`)
+      const response = await fetch(`/api/Arbetarsida`)
       const responseData = await response.json()
       setData(responseData)
       console.log(responseData)
@@ -14,7 +14,7 @@ const Arbetarsida = () => {
     GetAllChats()
   }, [])
 
-
+    
   return (
     <div>
       {data.map((chats, index) => (

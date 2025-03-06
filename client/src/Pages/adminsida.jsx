@@ -1,9 +1,12 @@
 import {Link, useParams} from "react-router-dom";
 import {useEffect, useState} from "react";
+import cogwheel from '../images/cogwheel.png'
+import form from '../images/contact-form.png'
+import customerservice from '../images/customer-support.png'
 
 function Adminsida() {
     
-    const { companyName } = useParams();
+    const { company } = useParams();
     const [data, setData] = useState([]);
 
     useEffect(() => {
@@ -15,21 +18,30 @@ function Adminsida() {
                 // console.log(responseData)
                 setData(responseData)
                 // Console.log(data)
-
             } catch (error) {
                 console.error("An error has occured:", error);
             }
         };
-        //function som hämtar company namn/*
     }, []);
     
   return( 
       <>
         <div>
             <h1>Admin site</h1>
-            <Link to={`/redigeramedarbetare`}><button>edit coworkers</button></Link>
-            <button>Redigera Formulär</button>
-            <button>Arbetarsida</button>
+                <div className="adminNavBar">
+                    <div>
+                        <Link to={`/redigeramedarbetare`}><img src={cogwheel} className="adminIcons" /></Link>
+                        <p className="adminLayoutP">Employees</p>
+                    </div>
+                    <div>
+                        <Link to={`/caseEditor`}><img src={form} className="adminIcons"/></Link>
+                        <p className="adminLayoutP">Edit form</p>
+                    </div>
+                    <div>
+                        <Link to={`/arbetarsida`}><img src={customerservice} className="adminIcons"/></Link>
+                        <p className="adminLayoutP">Issues</p>
+                </div>
+                </div>
         </div>
     </>
   );
