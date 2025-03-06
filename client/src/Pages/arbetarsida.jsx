@@ -8,7 +8,6 @@ const Arbetarsida = () => {
 
 
   useEffect(() => {
-<<<<<<< HEAD
     const GetChats = async () => {
       const response = await fetch(`/api/arbetarsida/`, {
         method: "POST",
@@ -17,10 +16,6 @@ const Arbetarsida = () => {
         },
         body: JSON.stringify({ getAllChats: allChats }),
       })
-=======
-    const GetAllChats = async () => {
-      const response = await fetch(`/api/Arbetarsida`)
->>>>>>> dev
       const responseData = await response.json()
       setData(responseData)
       console.log(responseData)
@@ -28,7 +23,6 @@ const Arbetarsida = () => {
     GetChats()
   }, [updateTicker])
 
-<<<<<<< HEAD
   const updateSite = () => {
     setTimeout(() => {
       setUpdateTicker(updateTicker + 1)
@@ -41,10 +35,6 @@ const Arbetarsida = () => {
   }
 
   
-
-=======
-    
->>>>>>> dev
   return (
     <div>
       <div>
