@@ -5,11 +5,11 @@ using server.Properties;
 using System.Text.Json;
 
 
-
 Database database = new();
 var db = database.Connection();
 Queries queries = new(db);
 Mail newmail = new Mail();
+CaseTypeUpdate caseTypeUpdate = new();
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -129,7 +129,7 @@ app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
 
 app.MapGet("/api/arbetarsida", async (HttpContext context) =>
 {
-    string company = context.Session.GetString("CompanyName");
+    string company = context.Session.GetString("companyName");
     bool csRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
     if (csRep)
     {
@@ -243,7 +243,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
                 new ClaimsPrincipal(new ClaimsIdentity(
                     new[] {
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),  //sparar användarens Id
-                        new Claim(ClaimTypes.Email, user.Email), // sparar användarens  e-post 
+                        new Claim(ClaimTypes.Email, user.Email), // sparar användarens e-post 
                         new Claim("IsAdmin", user.IsAdmin.ToString()), // sparar om användaren är admin eller inte
                         new Claim("CsRep", user.CsRep.ToString()) // sparar om användaren är admin eller inte
 
@@ -374,6 +374,34 @@ app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
     return Results.Forbid();
 });
 
+app.MapGet("/api/casetypes", async (HttpContext context) =>
+{
+    var company = context.Session.GetString("CompanyName");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
+    
+    if (isAdmin)
+    {
+        var casetypes = await queries.GetCaseTypes(company);
+        Console.WriteLine(casetypes);
+        return casetypes;
+    }
+    
+    return null;
+});
+
+app.MapPost("/api/NewCaseType", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var caseType = JsonSerializer.Deserialize<CaseTypeUpdate>(body);
+    
+    Console.WriteLine("hit kommer du");
+    caseType.Company = context.Session.GetInt32("company");
+    
+    queries.postNewCasetype(caseType);
+});
+
 
 app.Run();
 Console.ReadLine();
@@ -395,5 +423,11 @@ public class ChatData
     // public int CaseType { get; set; }
     // public string Company { get; set; }
     public bool csrep { get; set; }
+}
+
+public class CaseTypeUpdate
+{
+    public string caseType { get; set; }
+    public int? Company { get; set; }  // 🆕 Se till att Company är med!
 }
 
