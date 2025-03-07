@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import {use, useEffect, useState} from "react";
 import plusSign from "../images/plus-button.png"
 
 function Redigeramedarbetare() {
@@ -9,7 +9,7 @@ function Redigeramedarbetare() {
     const [error, setError] = useState(null);
     const [isVisible, setIsVisible] = useState(false);
     const [Email, setEmail] = useState('');
-    const [formSubmitted, setformSubmitted] = useState(0)
+    const [updateTicker, setUpdateTicker] = useState(0)
 
     const fetchCoWorkers = async () => {
         console.log("useEffect is called.")
@@ -40,7 +40,13 @@ function Redigeramedarbetare() {
 
     useEffect(() => {
         fetchCoWorkers();
-    }, []);
+    }, [updateTicker]);
+
+    const updateSite = () => {
+        setTimeout(() => {
+            setUpdateTicker(updateTicker + 1)
+        }, 500);
+    }
 
     const handleCoworkerSubmit = async (e) => {
         e.preventDefault();
@@ -54,8 +60,22 @@ function Redigeramedarbetare() {
                 Email
             }),
         });
+        updateSite()
     };
     
+    const handleCoworkerDelete = async (email) =>{
+        //e.preventDefault();
+        await fetch('/api/deleteCsRep', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                Email: email,
+            }),
+        })
+        updateSite()
+    };
 
     
     const newCoworkerToggle = () => {
@@ -78,6 +98,7 @@ function Redigeramedarbetare() {
                                 <p value={item.companyName}><strong>Company:</strong> {item.companyName ?? "N/A"}</p>
                                 <p value={item.csRep}><strong>Customer Service User:</strong> {item.csRep ? "Yes" : "No"}</p>
                                 <p value={item.isAdmin}><strong>Admin:</strong> {item.isAdmin ? "Yes" : "No"}</p>
+                                <button onClick={() => handleCoworkerDelete(item.email)}>Remove coworker</button>
                             </div>
                         </div>
                     ))

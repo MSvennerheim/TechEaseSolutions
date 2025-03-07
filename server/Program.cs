@@ -4,14 +4,15 @@ using server;
 using server.Properties;
 using System.Text.Json;
 
+
+
 Database database = new();
 var db = database.Connection();
 Queries queries = new(db);
 Mail newmail = new Mail();
 
+
 var builder = WebApplication.CreateBuilder(args);
-
-
 
 // här konfigureras sessionshantering
 builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
@@ -45,56 +46,172 @@ app.UseAuthentication(); // Aktiverar autentisering
 app.UseAuthorization();  // aktiverar behörighetshantering
 app.UseMiddleware<AuthMiddleware>();  // Detta är min egna middleware för autentisering 
 
+
+
 app.MapGet("/", () => "Hello World!");
 
 app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
 {
+    // Console.WriteLine(company);
     var companyDetails = await queries.GetCompanyName(company);
+    
+    // Console.WriteLine(companyDetails);
     return companyDetails;
 });
 
-app.MapGet("/api/Chat/{chatId:int}", async (int chatId) =>
+app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 {
-    var chatHistory = await queries.GetChatHistory(chatId);
-    return chatHistory;
-});
-
-app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
-{
-    string company = context.Session.GetString("companyName");
-    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
-    Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
-    if (isAdmin)
+    
+    // as long as your session is logged in to the correct company you can access the chat. 
+    // if you're a customer query checks if you're the sender of a message in chat. 
+    
+    var user = new User
     {
-            var employees = await queries.GetEmployees(company);
-            return employees;
-    }
-    return null;
-});
+        Email = context.Session.GetString("UserEmail"),
+        CompanyName = context.Session.GetString("CompanyName"),
+        CsRep = Convert.ToBoolean(context.Session.GetString("CsRep")),
+        ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
+    };
 
+    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    if (chatId == user.ChatId && !user.CsRep)
+    {
+        var chatHistory = await queries.GetChatHistory(user);
+        return chatHistory;
+    } 
+    if (user.CsRep)
+    {
+        user.ChatId = chatId;
+        var chatHistory = await queries.GetChatHistory(user);
+        return chatHistory;
+    } 
+    
+    return "no chat found";
+
+});
 
 app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
+    
     var chatId = int.Parse(context.Request.RouteValues["chatId"]?.ToString());
     using var reader = new StreamReader(context.Request.Body);
     var body = await reader.ReadToEndAsync();
     var chatData = JsonSerializer.Deserialize<ChatData>(body);
+    
     chatData.chatId = chatId;
+    chatData.email = context.Session.GetString("UserEmail");
+    chatData.csrep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+
+    // deserialize json before putting into WriteChatToDB
+    // (needed here since chatId is needed for emailConfirmationOnAnswer)
 
     string emailConfirmationAdress = await queries.WriteChatToDB(chatData);
     if (emailConfirmationAdress != "")
     {
+        // hopefully this'll work, but first get in the response to db
         await newmail.emailConfirmationOnAnswer(emailConfirmationAdress, chatData.chatId);
         Console.WriteLine("Email sent placeholder to email: " + emailConfirmationAdress);
     }
 });
 
-app.MapGet("/api/arbetarsida", async (HttpContext context) =>
+app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
 {
-    var company = context.Session.GetString("companyName");
-    var chats = await queries.GetChatsForCsRep(company);
-    return chats;
+    var company = context.Session.GetString("CompanyName");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
+    if (isAdmin)
+    {
+        var employees = await queries.GetEmployees(company);
+        return employees;
+    }
+    return null;
 });
+
+app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
+{
+    string company = context.Session.GetString("CompanyName");
+    bool csRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var sortingObject = JsonSerializer.Deserialize<ChatSortingObject>(body);
+    
+    if (csRep)
+    {
+        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats);
+        return chats;
+    }
+    return "no access";
+});
+
+app.MapPost("/api/guestLogin", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var loginData = JsonSerializer.Deserialize<LoginRequest>(body);
+
+    try
+    {
+        
+    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
+    {
+        return Results.BadRequest(new { message = "Email and chat are required" });
+    }
+
+    string decodedEmail = Uri.UnescapeDataString(loginData.Email);
+    Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
+    var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
+    if (user != null)
+    {
+        var authProperties = new AuthenticationProperties
+        { 
+            IsPersistent = true, 
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
+        };
+            
+            await context.SignInAsync(
+                "CookieAuth",  
+                new ClaimsPrincipal(new ClaimsIdentity(
+                    new[] {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Email, user.Email), 
+                        new Claim("IsAdmin", user.IsAdmin.ToString()), 
+                        new Claim("CsRep", user.CsRep.ToString()) ,
+                    },
+                    "CookieAuth")),
+                authProperties
+            );
+            context.Session.SetString("UserId", user.Id.ToString());
+            context.Session.SetString("UserEmail", user.Email);
+            context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
+            context.Session.SetString("CsRep", user.CsRep.ToString());
+            context.Session.SetString("CompanyName", user.CompanyName);
+            context.Session.SetInt32("ChatId", user.ChatId);
+
+            
+            
+            // Retunerar inloggningsdata
+            return Results.Ok(new { 
+                token = "test-token",
+                user = new {
+                    id = user.Id,
+                    email = user.Email,
+                    company = user.Company,
+                    companyName = user.CompanyName,
+                    csRep = user.CsRep,
+                    isAdmin = user.IsAdmin,
+                    chatId = user.ChatId
+                }
+            }); 
+    }
+    return Results.Unauthorized(); 
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+        return Results.BadRequest(new { message = "An error occurred during login." });
+    }
+});
+
 
 // API_endpoint för att kunna logga in
 app.MapPost("/api/login", async (HttpContext context) =>
@@ -106,48 +223,58 @@ app.MapPost("/api/login", async (HttpContext context) =>
         var body = await reader.ReadToEndAsync();
         var loginData = JsonSerializer.Deserialize<LoginRequest>(body);
 
+        
+        // Kontroll om en epost och lösenord har skickats 
         if (loginData == null || string.IsNullOrEmpty(loginData.Email) || string.IsNullOrEmpty(loginData.Password))
         {
             return Results.BadRequest(new { message = "Email and password are required" });
         }
-
+        
+        
+        // checkar användaren genom att kolla up den i databasen
         var user = await queries.ValidateUser(loginData.Email, loginData.Password);
         if (user != null)
         {
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24)
+                IsPersistent = true, // behåller sessionen även om den har stängts 
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) // sessionen gäller i 24 timmar 
             };
-
+            
+            // Skapar en cookie-baserad autentisering för användaren. 
             await context.SignInAsync(
                 "CookieAuth",  
                 new ClaimsPrincipal(new ClaimsIdentity(
                     new[] {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email),
-                        new Claim("IsAdmin", user.IsAdmin.ToString())
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),  //sparar användarens Id
+                        new Claim(ClaimTypes.Email, user.Email), // sparar användarens  e-post 
+                        new Claim("IsAdmin", user.IsAdmin.ToString()), // sparar om användaren är admin eller inte
+                        new Claim("CsRep", user.CsRep.ToString()) // sparar om användaren är admin eller inte
+
                     },
                     "CookieAuth")),
                 authProperties
             );
-
+             // lagrar användarensinformation i sessionen
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
             context.Session.SetInt32("company", user.Company);
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
             context.Session.SetString("CsRep", user.CsRep.ToString());
-            context.Session.SetString("companyName", user.CompanyName);
+            context.Session.SetString("CompanyName", user.CompanyName);
 
+            
+            
+            // Retunerar inloggningsdata
             return Results.Ok(new { 
                 token = "test-token",
                 user = new {
                     id = user.Id,
                     email = user.Email,
                     company = user.Company,
-                    isAdmin = user.IsAdmin,
                     companyName = user.CompanyName,
-                    csrep = user.CsRep
+                    csRep = user.CsRep,
+                    isAdmin = user.IsAdmin 
                 }
             });
         }
@@ -170,11 +297,13 @@ app.MapGet("/api/check-session", (HttpContext context) =>
     // felsökning
     Console.WriteLine($"Session Data: UserId={userId}, Email={email}, IsAdmin={isAdmin}");
 
+    // om ingen användare är inloggad ska det retunera unauthorized
     if (string.IsNullOrEmpty(userId))
     {
         return Results.Unauthorized();
     }
 
+    // retunerar sessionens inforamation till frontend
     return Results.Ok(new
     {
         userId,
@@ -200,9 +329,12 @@ app.MapPost("/api/form", async (HttpContext context) =>
         if (ticketInformation != null)
         {
             await queries.CompanyName(ticketInformation);
+            //Creates a temp user for a ticket.
             await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
-            newmail.generateNewIssue(ticketInformation);
+            //Creates a new confirmation mail that gets sent to the user in question.
+            // newmail.generateNewIssue(ticketInformation);
+            
             return Results.Ok();
         }
     }
@@ -246,6 +378,27 @@ app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
     return Results.Forbid();
 });
 
+app.MapPost("api/deleteCsRep", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var user = JsonSerializer.Deserialize<User>(body);
+    
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    int Company = Convert.ToInt32(context.Session.GetInt32("company"));
+
+    // check so that only a session that's admin and for the same company can delete account
+    
+    if (isAdmin)
+    {
+        await queries.RemoveCsRep(Company, user.Email);
+        return Results.Ok("Customer support rep deleted.");
+    }
+
+    return Results.BadRequest("You do not have access to this function.");
+
+});
+
 
 // Reset password api
 app.MapPost("/api/reset-password", async (HttpContext context) =>
@@ -282,11 +435,13 @@ app.MapPost("/api/reset-password", async (HttpContext context) =>
 app.Run();
 Console.ReadLine();
 
+
 // En klass för att kunna representera inloggningsförfrågningar
 public class LoginRequest
 {
     public string Email { get; set; }
     public string Password { get; set; }
+    public string ChatId { get; set; }
 }
 
 public class ChatData
@@ -294,9 +449,10 @@ public class ChatData
     public string message { get; set; }
     public string email { get; set; }
     public int chatId { get; set; }
+    // public int CaseType { get; set; }
+    // public string Company { get; set; }
     public bool csrep { get; set; }
 }
-
 public class NewCsRepRequest
 {
     public string Email {get; set;}
@@ -310,4 +466,10 @@ public class PasswordResetRequest
     public string email { get; set; }
     public string token { get; set; }
     public string newPassword { get; set; }
+}
+
+
+public class ChatSortingObject
+{
+    public bool getAllChats { get; set; }
 }

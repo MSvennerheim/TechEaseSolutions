@@ -17,13 +17,13 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
       console.log("Authenticated User:", user); // debugging
 
       if (!user) {
-        navigate("/login"); // skicka till login om ej inloggad
+        navigate("/login/"); // skicka till login om ej inloggad
       } else {
         setIsAuthenticated(true);
         setIsAdmin(user.isAdmin);
 
         if (adminOnly && !user.isAdmin) {
-          navigate("/arbetarsida"); // skicka arbetare till sin sida om de försöker gå till admin
+          navigate(`/arbetarsida/`); // skicka arbetare till sin sida om de försöker gå till admin
         }
       }
       setIsLoading(false);

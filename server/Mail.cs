@@ -13,6 +13,7 @@ public class Mail
         mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
         mimeMessage.To.Add(MailboxAddress.Parse(ticketinformation.email));
         mimeMessage.Subject = "Tack för att du skickat in ditt ärende till TechEaseSolution";
+        string encodedEmail = Uri.EscapeDataString(ticketinformation.email);
 
 
         var bodyBuilder = new BodyBuilder();
@@ -23,7 +24,7 @@ public class Mail
             <h2>Tack för ditt ärende!</h2>
             <p>Vi har nu tagit emot ditt ärende #{ticketinformation.chatid}.</p>
             <p>{ticketinformation.description}</p>
-            <p> För att få tillgång till din chat går du in: <a href='http://localhost:5173/Chat/{ticketinformation.chatid}'>HÄR</a>
+            <p> För att få tillgång till din chat går du in: <a href='http://localhost:5173/guestlogin/{ticketinformation.chatid}?email={encodedEmail}'>HÄR</a>
             <p>Kundtjänst kommer svara så fort de kan.</p>
             <p><img src='cid:image1'></p>
             <p>Svara inte på detta mejlet, det är autogenererat</p>
@@ -78,13 +79,14 @@ public class Mail
         mimeMessage.Subject = "Ditt ärende har uppdaterats";
             
         var bodyBuilder = new BodyBuilder();
-
-        // add hyperlink to chat
+        string encodedEmail = Uri.EscapeDataString(email);
+        
+        
         bodyBuilder.HtmlBody = $@"
         <html>
         <body>
             <h2>Ditt ärende har uppdaterats!</h2>
-            <p>Ditt ärende har fått ett svar, klicka på länken HÄR #{chatid}.</p>
+            <p>Ditt ärende har fått ett svar, klicka på länken <a href='http://localhost:5173/guestlogin/{chatid}?email={encodedEmail}'>HÄR</a>.</p>
             <p>Svara inte på detta mejlet, det är autogenererat</p>
         </body>
         </html>";
