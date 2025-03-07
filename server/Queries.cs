@@ -276,7 +276,11 @@ public class Queries
         var users = new List<User>();
 
         const string sql =
-            @"SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where name = @company";
+            @"SELECT * 
+                FROM users 
+                INNER JOIN public.companies c ON c.id = users.company
+                WHERE name = @company AND activeaccount = true";
+        
         await using (var cmd = _db.CreateCommand(sql))
         {
             cmd.Parameters.AddWithValue("@company", company);
@@ -307,7 +311,7 @@ public class Queries
             SELECT users.id, email, password, company, c.name, csrep, admin
             FROM users 
             JOIN public.companies c on c.id = users.company
-            WHERE email = @email";
+            WHERE email = @email AND activeaccount = true";
 
         await using var cmd = _db.CreateCommand(sql);
         cmd.Parameters.AddWithValue("email", email);
@@ -465,6 +469,23 @@ public class Queries
             cmd.Parameters.AddWithValue(true);
             cmd.Parameters.AddWithValue(false);
             cmd.Parameters.AddWithValue(company);
+            await cmd.ExecuteNonQueryAsync();
+        }
+    }
+
+    public async Task RemoveCsRep(int company, string email)
+    {
+        
+        // only deactivate accounts which are csreps, in case anyone who's deactivated have a customer account
+        
+        const string softdelete = @"UPDATE users
+                                        SET activeaccount = false
+                                        WHERE email = @email AND company = @company AND csrep = true";
+
+        await using (var cmd = _db.CreateCommand(softdelete))
+        {
+            cmd.Parameters.AddWithValue("@email", email);
+            cmd.Parameters.AddWithValue("@company", company);
             await cmd.ExecuteNonQueryAsync();
         }
     }

@@ -378,6 +378,27 @@ app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
     return Results.Forbid();
 });
 
+app.MapPost("api/deleteCsRep", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var user = JsonSerializer.Deserialize<Queries.User>(body);
+    
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    int Company = Convert.ToInt32(context.Session.GetInt32("company"));
+
+    // check so that only a session that's admin and for the same company can delete account
+    
+    if (isAdmin)
+    {
+        await queries.RemoveCsRep(Company, user.Email);
+        return Results.Ok("Customer support rep deleted.");
+    }
+
+    return Results.BadRequest("You do not have access to this function.");
+
+});
+
 
 app.Run();
 Console.ReadLine();

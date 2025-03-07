@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import {use, useEffect, useState} from "react";
 import plusSign from "../images/plus-button.png"
 
 function Redigeramedarbetare() {
@@ -56,6 +56,18 @@ function Redigeramedarbetare() {
         });
     };
     
+    const handleCoworkerDelete = async (email) =>{
+        //e.preventDefault();
+        await fetch('/api/deleteCsRep', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                Email: email,
+            }),
+        })
+    }
 
     
     const newCoworkerToggle = () => {
@@ -78,6 +90,7 @@ function Redigeramedarbetare() {
                                 <p value={item.companyName}><strong>Company:</strong> {item.companyName ?? "N/A"}</p>
                                 <p value={item.csRep}><strong>Customer Service User:</strong> {item.csRep ? "Yes" : "No"}</p>
                                 <p value={item.isAdmin}><strong>Admin:</strong> {item.isAdmin ? "Yes" : "No"}</p>
+                                <button onClick={() => handleCoworkerDelete(item.email)}>Remove coworker</button>
                             </div>
                         </div>
                     ))
