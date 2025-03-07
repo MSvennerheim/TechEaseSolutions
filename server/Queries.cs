@@ -359,16 +359,144 @@ public class Queries
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
 
-    public async Task PostNewCsRep(int company, string email)
+    
+    
+    
+    // la till fler funktioner i patricks PostNewCsRep
+    public async Task <bool> PostNewCsRep(int company, string email)
     {
-        await using (var cmd = _db.CreateCommand(
-                         "INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4)"))
+        try
         {
-            cmd.Parameters.AddWithValue(email);
-            cmd.Parameters.AddWithValue(true);
-            cmd.Parameters.AddWithValue(false);
-            cmd.Parameters.AddWithValue(company);
-            await cmd.ExecuteNonQueryAsync();
+            // Lägger in användare
+            await using (var cmd = _db.CreateCommand(
+                             "INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4)"))
+            {
+                cmd.Parameters.AddWithValue(email);
+                cmd.Parameters.AddWithValue(true); //användaren är en csrep
+                cmd.Parameters.AddWithValue(false); // användaren är inte en admin
+                cmd.Parameters.AddWithValue(company);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        
+            // Får tag i företag namnet
+            string companyName = "";
+            await using (var cmd = _db.CreateCommand("SELECT name FROM companies WHERE id = @companyId"))
+            {
+                cmd.Parameters.AddWithValue("@companyId", company);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    companyName = reader.GetString(0);
+                }
+            }
+        
+            // Genererar Token
+            string token = await CreatePasswordResetToken(email);
+        
+            // Skicka mail
+            Mail mail = new Mail();
+            bool emailSent = await mail.SendNewCSRepWelcomeEmail(email, token, companyName);
+        
+            return emailSent;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating new CS rep: {ex.Message}");
+            return false;
         }
     }
-}
+    
+    
+    
+    
+    public async Task<bool> ValidateTokenAndResetPassword(string email, string token, string newPassword)
+    {
+        // Validera token
+        const string validateSql = @"
+    SELECT id FROM password_reset_tokens 
+    WHERE email = @email AND token = @token AND expiry_date > @now";
+
+        await using var validateCmd = _db.CreateCommand(validateSql);
+        validateCmd.Parameters.AddWithValue("email", email);
+        validateCmd.Parameters.AddWithValue("token", token);
+        validateCmd.Parameters.AddWithValue("now", DateTime.Now);
+
+        var tokenId = await validateCmd.ExecuteScalarAsync();
+
+        if (tokenId == null)
+        {
+            return false; // den är invalid eller så har den har gått ut
+        }
+
+        // Uppdaterar lösenord
+        const string updateSql = @"
+    UPDATE users SET password = @password WHERE email = @email";
+
+        await using var updateCmd = _db.CreateCommand(updateSql);
+        updateCmd.Parameters.AddWithValue("email", email);
+        updateCmd.Parameters.AddWithValue("password", newPassword);
+        int rowsAffected = await updateCmd.ExecuteNonQueryAsync();
+
+        if (rowsAffected == 0)
+        {
+            return false; // Användaren kunde inte hittas 
+        }
+
+        // Tar bort tokenen med mailet efter man har skapat ett nytt lösenord 
+        const string deleteSql = @"
+    DELETE FROM password_reset_tokens WHERE email = @email";
+
+        await using var deleteCmd = _db.CreateCommand(deleteSql);
+        deleteCmd.Parameters.AddWithValue("email", email);
+        await deleteCmd.ExecuteNonQueryAsync();
+
+        return true;
+    }
+    
+    
+    public async Task<string> CreatePasswordResetToken(string email)
+    {
+        // Genererar en unik token 
+        string token = Guid.NewGuid().ToString("N");
+        DateTime expiryDate = DateTime.Now.AddHours(24);
+    
+        // Kollar först om det redan finns en token med det mailet 
+        const string checkSql = @"
+        SELECT id FROM password_reset_tokens WHERE email = @email";
+    
+        await using var checkCmd = _db.CreateCommand(checkSql);
+        checkCmd.Parameters.AddWithValue("email", email);
+    
+        var existingId = await checkCmd.ExecuteScalarAsync();
+    
+        if (existingId != null)
+        {
+            // om den finns så kommer den uppdatera Tokenen till en ny 
+            const string updateSql = @"
+            UPDATE password_reset_tokens 
+            SET token = @token, expiry_date = @expiryDate 
+            WHERE email = @email";
+        
+            await using var updateCmd = _db.CreateCommand(updateSql);
+            updateCmd.Parameters.AddWithValue("token", token);
+            updateCmd.Parameters.AddWithValue("expiryDate", expiryDate);
+            updateCmd.Parameters.AddWithValue("email", email);
+            await updateCmd.ExecuteNonQueryAsync();
+        }
+        else
+        {
+            // Här lägger jag in en ny token
+            const string insertSql = @"
+            INSERT INTO password_reset_tokens (email, token, expiry_date)
+            VALUES (@email, @token, @expiryDate)";
+        
+            await using var insertCmd = _db.CreateCommand(insertSql);
+            insertCmd.Parameters.AddWithValue("email", email);
+            insertCmd.Parameters.AddWithValue("token", token);
+            insertCmd.Parameters.AddWithValue("expiryDate", expiryDate);
+            await insertCmd.ExecuteNonQueryAsync();
+        }
+    
+        return token;
+    }
+}    

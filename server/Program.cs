@@ -11,16 +11,7 @@ Mail newmail = new Mail();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Lägg till CORS-tjänsten till DI-container
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.WithOrigins("http://localhost:5173") // Här anger du frontends URL (eller "*" om alla origin ska tillåtas)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
+
 
 // här konfigureras sessionshantering
 builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
@@ -211,7 +202,7 @@ app.MapPost("/api/form", async (HttpContext context) =>
             await queries.CompanyName(ticketInformation);
             await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
-
+            newmail.generateNewIssue(ticketInformation);
             return Results.Ok();
         }
     }
@@ -256,6 +247,38 @@ app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
 });
 
 
+// Reset password api
+app.MapPost("/api/reset-password", async (HttpContext context) =>
+{
+    try
+    {
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var resetData = JsonSerializer.Deserialize<PasswordResetRequest>(body);
+        
+        if (resetData == null || string.IsNullOrEmpty(resetData.email) || 
+            string.IsNullOrEmpty(resetData.token) || string.IsNullOrEmpty(resetData.newPassword))
+        {
+            return Results.BadRequest(new { message = "Email, token and new password are required" });
+        }
+        
+        bool resetSuccessful = await queries.ValidateTokenAndResetPassword(
+            resetData.email, resetData.token, resetData.newPassword);
+        
+        if (resetSuccessful)
+        {
+            return Results.Ok(new { message = "Password reset successful" });
+        }
+        
+        return Results.BadRequest(new { message = "Invalid or expired token" });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+        return Results.BadRequest(new { message = "An error occurred during password reset." });
+    }
+});
+
 app.Run();
 Console.ReadLine();
 
@@ -279,4 +302,12 @@ public class NewCsRepRequest
     public string Email {get; set;}
     public string CompanyName { get; set;}
     public bool IsAdmin { get; set;}
+}
+
+// klass för passwordreset
+public class PasswordResetRequest
+{
+    public string email { get; set; }
+    public string token { get; set; }
+    public string newPassword { get; set; }
 }

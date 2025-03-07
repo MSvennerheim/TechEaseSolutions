@@ -113,6 +113,9 @@ public class Mail
         return true;
     }
 
+    
+    
+    
     public async Task<bool> SendNewCSRepWelcomeEmail(string email, string tempToken, string companyName)
     {
         MimeMessage mimeMessage = new MimeMessage();
