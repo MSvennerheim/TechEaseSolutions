@@ -12,7 +12,6 @@ function CaseEditor() {
     // 🟢 Hämta casetypes från backend
     useEffect(() => {
         setLoading(true);
-
         fetch(`api/casetypes`) 
             .then(response => response.json())
             .then(data => setTopics(data))
@@ -20,99 +19,23 @@ function CaseEditor() {
                 console.error("❌ Fel vid hämtning av casetypes:", error);
                 setError("Kunde inte hämta casetypes. Kontrollera backend.");
             })
-            
             .finally(() => setLoading(false));
     }, []);
 
     // 🟢 Lägg till ett nytt ämne i UI (ej i databasen än)
-    const handleAddTopic = () => {
-        const trimmedTopic = newTopic.trim();
-        if (trimmedTopic === "") return; // Förhindra tomma ämnen
-        
-        // Kontrollera om ämnet redan finns (case-insensitive)
-        const topicExists = topics.some(t => 
-            t.text.trim().toLowerCase() === trimmedTopic.toLowerCase()
-        );
-        
-        if (topicExists) {
-            setError("Detta ämne finns redan!");
-            return;
-        }
-        
-        setTopics([...topics, { id: null, text: trimmedTopic, company: parseInt(companyId) }]);
-        setNewTopic("");
-        setError(null); // Rensa eventuella tidigare fel
-    };
-
-    // 🟢 Spara alla ändringar (uppdateringar + nya)
-    const handleSave = async () => {
-        const newTopics = topics.filter(t => t.id === null);
-        const existingTopics = topics.filter(t => t.id !== null);
-
-        try {
-            // 🟢 Skicka PUT för uppdateringar
-            if (existingTopics.length > 0) {
-                const updateResponse = await fetch("/api/casetypes", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(existingTopics),
-                });
-                
-                if (!updateResponse.ok) {
-                    throw new Error('Fel vid uppdatering av befintliga ämnen');
-                }
-                
-                const updatedData = await updateResponse.json();
-                console.log("✅ Uppdaterade ämnen:", updatedData);
-            }
-
-            // 🆕 Skicka POST för nya ämnen och uppdatera UI
-            const updatedTopics = [...existingTopics];
-            
-            for (const topic of newTopics) {
-                const requestData = {
-                    text: topic.text.trim(),
-                    company: parseInt(topic.company)
-                };
-                
-                console.log("🔍 Försöker skicka data:", JSON.stringify(requestData, null, 2));
-                
-                try {
-                    const response = await fetch("/api/casetypes", {
-                        method: "POST",
-                        headers: { 
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(requestData),
-                    });
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error("❌ Server svarade med:", response.status, errorText);
-                        throw new Error(`Fel vid tillägg av nytt ämne: ${errorText}`);
-                    }
-
-                    const newData = await response.json();
-                    console.log("✅ Nytt ämne tillagt:", newData);
-                    
-                    // Uppdatera topics-listan med det nya ID:t från servern
-                    updatedTopics.push({
-                        ...topic,
-                        id: newData.id
-                    });
-                } catch (error) {
-                    console.error("❌ Fel vid anrop:", error);
-                    throw error;
-                }
-            }
-
-            // Uppdatera hela topics-listan med de nya ID:na
-            setTopics(updatedTopics);
-            alert("Ämnen uppdaterade!");
-        } catch (error) {
-            console.error("❌ Fel vid sparande:", error);
-            setError(error.message);
-        }
+    const handleAddTopic = async () => {
+        console.log(newTopic);
+        if (newTopic != "") {                
+            const response = await fetch("/api/NewCaseType", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                caseType: newTopic
+            }),
+                })
+            ;}
     };
 
     //  Ta bort ett ämne
@@ -151,29 +74,20 @@ function CaseEditor() {
                     value={newTopic} 
                     onChange={(e) => setNewTopic(e.target.value)}
                     placeholder="Skriv ett nytt ämne..."
-                    name="newTopic"
+                    className="topic"
                 />
                 <button onClick={handleAddTopic}>Lägg till</button>
 
-                <ul>
+                <div className="caseTypeLayout">
                     {topics.map((t, index) => (
-                        <li key={index}>
-                            <input 
-                                name="topics"
-                                type="text" 
-                                value={t.text} 
-                                onChange={(e) => {
-                                    const newTopics = [...topics];
-                                    newTopics[index].text = e.target.value;
-                                    setTopics(newTopics);
-                                }} 
-                            />
-                            <button onClick={() => handleDeleteTopic(t.id)}>🗑 Ta bort</button>
-                        </li>
-                    ))}
-                </ul>
-
-                <button onClick={handleSave}>Spara i databasen</button>
+                        <div key={index}>
+                            <p value={t.caseType}><strong>CaseType</strong> {t.caseType ?? "N/A"}</p>
+                            <button onClick={() => handleDeleteTopic(t.id)}>🗑Ta bort</button>
+                        </div>
+                        
+                ))}
+            </div>
+                
             </div> 
         </div>
     );
