@@ -114,31 +114,34 @@ public class Mail
         
         return true;
     }
+
     
-    /*
     
-    public async Task NewCSRep()
+    
+    public async Task<bool> SendNewCSRepWelcomeEmail(string email, string tempToken, string companyName)
     {
-                MimeMessage mimeMessage = new MimeMessage();
-        mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
-        mimeMessage.To.Add(MailboxAddress.Parse());
-        mimeMessage.Subject = "Välkommen till .....";
-
-
+        MimeMessage mimeMessage = new MimeMessage();
+        mimeMessage.From.Add(new MailboxAddress ("TechEaseSolution", "kundtjanstssontest@gmail.com"));
+        mimeMessage.To.Add(MailboxAddress.Parse(email));
+        mimeMessage.Subject = $"Välkommen till {companyName}, kundtjanstssontest@gmail.com";
+        
         var bodyBuilder = new BodyBuilder();
         
-        bodyBuilder.HtmlBody = @$"
+        //Skapa en url med token
+        string resetUrl = $"http://localhost:5173/reset-password?token={tempToken}&email={Uri.EscapeDataString(email)}";
+        
+        bodyBuilder.HtmlBody = $@"
         <html>
         <body>
-            <h2>Välkommen till ......</h2>
-            <p>Var vänlig och byta dit lösenord, tryck på länken nedan så kommer du att skickas vidare.</p>
-            <a href=""> <p>Hejsan<p> </a>
-            <p><img src='cid:image1'></p>
-            <p>Svara inte på detta mejlet, det är autogenererat</p>
+        <h2> Välkommen till {companyName} Kundtjänstsystem</h2>
+        <p>Ett konto har skapats för dig i vårt system.</p>
+        <p>Var vänlig och skapa ditt lösenord genom att klicka på länken nedan. Länken är giltig i 24 timmar.</p>
+        <p><a href=""{resetUrl}"">Skapa ditt lösenord</p>
+        <p><img src ='cid:image1'</p>
+        <p>Svara inte på detta mejl, det är autogenererat</p>
         </body>
         </html>";
-
-        
+          
         string imagePath = "TecheaseSolutionslogo.png";
         if (File.Exists(imagePath))
         {
@@ -158,22 +161,23 @@ public class Mail
             try
             {
                 client.Connect("smtp.gmail.com", 465, true);
-                client.Authenticate("kundtjanstssontest@gmail.com", "iitp gitd mlha yvvp");
+                client.Authenticate("kundtjanstssontest@gmail.com", "iitp gitd mlha yvvp"); // Consider using environment variables
                 client.Send(mimeMessage);
+                return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error sending email: " + ex.Message);
-                throw;
+                return false;
             }
             finally
             {
                 client.Disconnect(true);
                 client.Dispose();
             }
-        }
-    }  
-     
-    */
+        
+        } 
+    }
     
-}
+}    
+

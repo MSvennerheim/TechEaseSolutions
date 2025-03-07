@@ -65,7 +65,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
     // as long as your session is logged in to the correct company you can access the chat. 
     // if you're a customer query checks if you're the sender of a message in chat. 
     
-    var user = new Queries.User
+    var user = new User
     {
         Email = context.Session.GetString("UserEmail"),
         CompanyName = context.Session.GetString("CompanyName"),
@@ -73,7 +73,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
     };
 
-    Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
     if (chatId == user.ChatId && !user.CsRep)
     {
         var chatHistory = await queries.GetChatHistory(user);
@@ -90,7 +90,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 
 });
 
-app.MapPost("/api/ChatResponse/", async (HttpContext context) =>
+app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
     
     var chatId = int.Parse(context.Request.RouteValues["chatId"]?.ToString());
@@ -127,13 +127,17 @@ app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
     return null;
 });
 
-app.MapGet("/api/arbetarsida", async (HttpContext context) =>
+app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
 {
-    string company = context.Session.GetString("companyName");
+    string company = context.Session.GetString("CompanyName");
     bool csRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var sortingObject = JsonSerializer.Deserialize<ChatSortingObject>(body);
+    
     if (csRep)
     {
-        var chats = await queries.GetChatsForCsRep(company);
+        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats);
         return chats;
     }
     return "no access";
@@ -346,7 +350,7 @@ app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
 {
     using var reader = new StreamReader(context.Request.Body);
     var body = await reader.ReadToEndAsync();
-    var user = JsonSerializer.Deserialize<Queries.User>(body);
+    var user = JsonSerializer.Deserialize<User>(body);
     
     Console.WriteLine("Program.cs");
     int? Company = context.Session.GetInt32("company");
@@ -372,6 +376,27 @@ app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
     }
 
     return Results.Forbid();
+});
+
+app.MapPost("api/deleteCsRep", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var user = JsonSerializer.Deserialize<User>(body);
+    
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    int Company = Convert.ToInt32(context.Session.GetInt32("company"));
+
+    // check so that only a session that's admin and for the same company can delete account
+    
+    if (isAdmin)
+    {
+        await queries.RemoveCsRep(Company, user.Email);
+        return Results.Ok("Customer support rep deleted.");
+    }
+
+    return Results.BadRequest("You do not have access to this function.");
+
 });
 
 app.MapGet("/api/casetypes", async (HttpContext context) =>
@@ -403,6 +428,38 @@ app.MapPost("/api/NewCaseType", async (HttpContext context) =>
 });
 
 
+// Reset password api
+app.MapPost("/api/reset-password", async (HttpContext context) =>
+{
+    try
+    {
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var resetData = JsonSerializer.Deserialize<PasswordResetRequest>(body);
+        
+        if (resetData == null || string.IsNullOrEmpty(resetData.email) || 
+            string.IsNullOrEmpty(resetData.token) || string.IsNullOrEmpty(resetData.newPassword))
+        {
+            return Results.BadRequest(new { message = "Email, token and new password are required" });
+        }
+        
+        bool resetSuccessful = await queries.ValidateTokenAndResetPassword(
+            resetData.email, resetData.token, resetData.newPassword);
+        
+        if (resetSuccessful)
+        {
+            return Results.Ok(new { message = "Password reset successful" });
+        }
+        
+        return Results.BadRequest(new { message = "Invalid or expired token" });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+        return Results.BadRequest(new { message = "An error occurred during password reset." });
+    }
+});
+
 app.Run();
 Console.ReadLine();
 
@@ -424,6 +481,20 @@ public class ChatData
     // public string Company { get; set; }
     public bool csrep { get; set; }
 }
+public class NewCsRepRequest
+{
+    public string Email {get; set;}
+    public string CompanyName { get; set;}
+    public bool IsAdmin { get; set;}
+}
+
+// klass för passwordreset
+public class PasswordResetRequest
+{
+    public string email { get; set; }
+    public string token { get; set; }
+    public string newPassword { get; set; }
+}
 
 public class CaseTypeUpdate
 {
@@ -431,3 +502,8 @@ public class CaseTypeUpdate
     public int? Company { get; set; }  // 🆕 Se till att Company är med!
 }
 
+
+public class ChatSortingObject
+{
+    public bool getAllChats { get; set; }
+}

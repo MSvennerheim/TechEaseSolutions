@@ -80,7 +80,7 @@ public class Queries
         return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });
     }
 
-    public async Task<string> GetChatsForCsRep(string company)
+    public async Task<string> GetChatsForCsRep(string company, bool allChats)
     {
         var chats = new List<object>();
 
@@ -91,8 +91,10 @@ public class Queries
             JOIN companies ON messages.company = companies.id
             WHERE companies.name = @company
             ORDER BY chatid, timestamp DESC";
-
-
+        
+        
+        
+        
         await using (var cmd = _db.CreateCommand(sql))
         {
             cmd.Parameters.AddWithValue("@company", company);
@@ -112,7 +114,23 @@ public class Queries
             }
         }
 
-        return JsonSerializer.Serialize(chats, new JsonSerializerOptions { WriteIndented = true });
+        // return everything if box is checked in frontend, else sort open tickets
+        
+        if (allChats)
+        {
+            return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
+
+        }
+        var sorterdChats = new List<object>();
+
+        foreach (dynamic chat in chats)
+        {
+            if (!chat.csrep)
+            {
+                sorterdChats.Add(chat);
+            }
+        }
+        return JsonSerializer.Serialize(sorterdChats, new JsonSerializerOptions {WriteIndented = true});
     }
 
     public async Task<string> WriteChatToDB(ChatData chatData)
@@ -258,7 +276,11 @@ public class Queries
         var users = new List<User>();
 
         const string sql =
-            @"SELECT * FROM users INNER JOIN public.companies c ON c.id = users.company where name = @company";
+            @"SELECT * 
+                FROM users 
+                INNER JOIN public.companies c ON c.id = users.company
+                WHERE name = @company AND activeaccount = true";
+        
         await using (var cmd = _db.CreateCommand(sql))
         {
             cmd.Parameters.AddWithValue("@company", company);
@@ -289,7 +311,7 @@ public class Queries
             SELECT users.id, email, password, company, c.name, csrep, admin
             FROM users 
             JOIN public.companies c on c.id = users.company
-            WHERE email = @email";
+            WHERE email = @email AND activeaccount = true";
 
         await using var cmd = _db.CreateCommand(sql);
         cmd.Parameters.AddWithValue("email", email);
@@ -438,56 +460,201 @@ public class Queries
         return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
     }
 
-    public async Task PostNewCsRep(int company, string email)
+    // la till fler funktioner i patricks PostNewCsRep
+    public async Task <bool> PostNewCsRep(int company, string email)
     {
-        await using (var cmd = _db.CreateCommand(
-                         "INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4)"))
+        try
         {
-            cmd.Parameters.AddWithValue(email);
-            cmd.Parameters.AddWithValue(true);
-            cmd.Parameters.AddWithValue(false);
-            cmd.Parameters.AddWithValue(company);
-            await cmd.ExecuteNonQueryAsync();
-        }
-    }
-
-    public async Task<string> GetCaseTypes(string company)
-    {
-        var caseTypesList = new List<object>();
-        await using (var cmd = _db.CreateCommand(
-                         "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @company"))
-        {
-            cmd.Parameters.AddWithValue("@company", company);
-
-            await using (var reader = await cmd.ExecuteReaderAsync())
+            // Lägger in användare
+            await using (var cmd = _db.CreateCommand(
+                             "INSERT INTO users (email, csrep, admin, company) VALUES ($1, $2, $3, $4)"))
             {
-                while (await reader.ReadAsync())
+                cmd.Parameters.AddWithValue(email);
+                cmd.Parameters.AddWithValue(true); //användaren är en csrep
+                cmd.Parameters.AddWithValue(false); // användaren är inte en admin
+                cmd.Parameters.AddWithValue(company);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        
+            // Får tag i företag namnet
+            string companyName = "";
+            await using (var cmd = _db.CreateCommand("SELECT name FROM companies WHERE id = @companyId"))
+            {
+                cmd.Parameters.AddWithValue("@companyId", company);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
                 {
-                    caseTypesList.Add(new
-                    {
-                        caseId = reader.GetInt32(0),
-                        caseType = reader.GetString(1)
-                    });
+                    companyName = reader.GetString(0);
                 }
             }
+        
+            // Genererar Token
+            string token = await CreatePasswordResetToken(email);
+        
+            // Skicka mail
+            Mail mail = new Mail();
+            bool emailSent = await mail.SendNewCSRepWelcomeEmail(email, token, companyName);
+        
+            return emailSent;
         }
-
-        return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating new CS rep: {ex.Message}");
+            return false;
+        }
     }
 
-    public async Task postNewCasetype(CaseTypeUpdate casetype)
+    public async Task RemoveCsRep(int company, string email)
     {
-        Console.WriteLine(casetype.Company);
-        Console.WriteLine(casetype.caseType);
-        Console.WriteLine("query");
-        await using (var cmd = _db.CreateCommand(
-                         "INSERT INTO casetypes (text, company) VALUES (@caseType, @company)"))
+        
+        // only deactivate accounts which are csreps, in case anyone who's deactivated have a customer account
+        
+        const string softdelete = @"UPDATE users
+                                        SET activeaccount = false
+                                        WHERE email = @email AND company = @company AND csrep = true";
+
+        await using (var cmd = _db.CreateCommand(softdelete))
         {
-            cmd.Parameters.AddWithValue("@caseType", casetype.caseType);
-            cmd.Parameters.AddWithValue("@company", casetype.Company);
+            cmd.Parameters.AddWithValue("@email", email);
+            cmd.Parameters.AddWithValue("@company", company);
             await cmd.ExecuteNonQueryAsync();
         }
+        
     }
+    public async Task<bool> ValidateTokenAndResetPassword(string email, string token, string newPassword)
+    {
+        // Validera token
+        const string validateSql = @"
+    SELECT id FROM password_reset_tokens 
+    WHERE email = @email AND token = @token AND expiry_date > @now";
+
+        await using var validateCmd = _db.CreateCommand(validateSql);
+        validateCmd.Parameters.AddWithValue("email", email);
+        validateCmd.Parameters.AddWithValue("token", token);
+        validateCmd.Parameters.AddWithValue("now", DateTime.Now);
+
+        var tokenId = await validateCmd.ExecuteScalarAsync();
+
+        if (tokenId == null)
+        {
+            return false; // den är invalid eller så har den har gått ut
+        }
+
+        // Uppdaterar lösenord
+        const string updateSql = @"
+    UPDATE users SET password = @password WHERE email = @email";
+
+        await using var updateCmd = _db.CreateCommand(updateSql);
+        updateCmd.Parameters.AddWithValue("email", email);
+        updateCmd.Parameters.AddWithValue("password", newPassword);
+        int rowsAffected = await updateCmd.ExecuteNonQueryAsync();
+
+        if (rowsAffected == 0)
+        {
+            return false; // Användaren kunde inte hittas 
+        }
+
+        // Tar bort tokenen med mailet efter man har skapat ett nytt lösenord 
+        const string deleteSql = @"
+    DELETE FROM password_reset_tokens WHERE email = @email";
+
+        await using var deleteCmd = _db.CreateCommand(deleteSql);
+        deleteCmd.Parameters.AddWithValue("email", email);
+        await deleteCmd.ExecuteNonQueryAsync();
+
+        return true;
+    }
+    
+    
+    public async Task<string> CreatePasswordResetToken(string email)
+    {
+        // Genererar en unik token 
+        string token = Guid.NewGuid().ToString("N");
+        DateTime expiryDate = DateTime.Now.AddHours(24);
+    
+        // Kollar först om det redan finns en token med det mailet 
+        const string checkSql = @"
+        SELECT id FROM password_reset_tokens WHERE email = @email";
+    
+        await using var checkCmd = _db.CreateCommand(checkSql);
+        checkCmd.Parameters.AddWithValue("email", email);
+    
+        var existingId = await checkCmd.ExecuteScalarAsync();
+    
+        if (existingId != null)
+        {
+            // om den finns så kommer den uppdatera Tokenen till en ny 
+            const string updateSql = @"
+            UPDATE password_reset_tokens 
+            SET token = @token, expiry_date = @expiryDate 
+            WHERE email = @email";
+        
+            await using var updateCmd = _db.CreateCommand(updateSql);
+            updateCmd.Parameters.AddWithValue("token", token);
+            updateCmd.Parameters.AddWithValue("expiryDate", expiryDate);
+            updateCmd.Parameters.AddWithValue("email", email);
+            await updateCmd.ExecuteNonQueryAsync();
+        }
+        else
+        {
+            // Här lägger jag in en ny token
+            const string insertSql = @"
+            INSERT INTO password_reset_tokens (email, token, expiry_date)
+            VALUES (@email, @token, @expiryDate)";
+        
+            await using var insertCmd = _db.CreateCommand(insertSql);
+            insertCmd.Parameters.AddWithValue("email", email);
+            insertCmd.Parameters.AddWithValue("token", token);
+            insertCmd.Parameters.AddWithValue("expiryDate", expiryDate);
+            await insertCmd.ExecuteNonQueryAsync();
+        }
+    
+        return token;
+    }
+        public async Task<string> GetCaseTypes(string company)
+        {
+            var caseTypesList = new List<object>();
+            await using (var cmd = _db.CreateCommand(
+                             "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @company"))
+            {
+                cmd.Parameters.AddWithValue("@company", company);
+    
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        caseTypesList.Add(new
+                        {
+                            caseId = reader.GetInt32(0),
+                            caseType = reader.GetString(1)
+                        });
+                    }
+                }
+            }
+    
+            return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
+        }
+    
+        public async Task postNewCasetype(CaseTypeUpdate casetype)
+        {
+            Console.WriteLine(casetype.Company);
+            Console.WriteLine(casetype.caseType);
+            Console.WriteLine("query");
+            await using (var cmd = _db.CreateCommand(
+                             "INSERT INTO casetypes (text, company) VALUES (@caseType, @company)"))
+            {
+                cmd.Parameters.AddWithValue("@caseType", casetype.caseType);
+                cmd.Parameters.AddWithValue("@company", casetype.Company);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+    
+}    
+    
+    
+    
+
+
 
     public class User
     {
@@ -499,4 +666,3 @@ public class Queries
         public bool IsAdmin { get; set; }
         public int ChatId { get; set; }
     }
-}
