@@ -9,7 +9,7 @@ function Redigeramedarbetare() {
     const [error, setError] = useState(null);
     const [isVisible, setIsVisible] = useState(false);
     const [Email, setEmail] = useState('');
-    const [formSubmitted, setformSubmitted] = useState(0)
+    const [updateTicker, setUpdateTicker] = useState(0)
 
     const fetchCoWorkers = async () => {
         console.log("useEffect is called.")
@@ -40,7 +40,13 @@ function Redigeramedarbetare() {
 
     useEffect(() => {
         fetchCoWorkers();
-    }, []);
+    }, [updateTicker]);
+
+    const updateSite = () => {
+        setTimeout(() => {
+            setUpdateTicker(updateTicker + 1)
+        }, 500);
+    }
 
     const handleCoworkerSubmit = async (e) => {
         e.preventDefault();
@@ -54,6 +60,7 @@ function Redigeramedarbetare() {
                 Email
             }),
         });
+        updateSite()
     };
     
     const handleCoworkerDelete = async (email) =>{
@@ -67,7 +74,8 @@ function Redigeramedarbetare() {
                 Email: email,
             }),
         })
-    }
+        updateSite()
+    };
 
     
     const newCoworkerToggle = () => {
