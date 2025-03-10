@@ -611,10 +611,50 @@ public class Queries
     
         return token;
     }
+        public async Task<string> GetCaseTypes(string company)
+        {
+            var caseTypesList = new List<object>();
+            await using (var cmd = _db.CreateCommand(
+                             "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @company"))
+            {
+                cmd.Parameters.AddWithValue("@company", company);
+    
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        caseTypesList.Add(new
+                        {
+                            caseId = reader.GetInt32(0),
+                            caseType = reader.GetString(1)
+                        });
+                    }
+                }
+            }
+    
+            return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
+        }
+    
+        public async Task postNewCasetype(CaseTypeUpdate casetype)
+        {
+            Console.WriteLine(casetype.Company);
+            Console.WriteLine(casetype.caseType);
+            Console.WriteLine("query");
+            await using (var cmd = _db.CreateCommand(
+                             "INSERT INTO casetypes (text, company) VALUES (@caseType, @company)"))
+            {
+                cmd.Parameters.AddWithValue("@caseType", casetype.caseType);
+                cmd.Parameters.AddWithValue("@company", casetype.Company);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+    
 }    
     
     
     
+
+
 
     public class User
     {
