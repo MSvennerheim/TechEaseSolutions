@@ -110,7 +110,7 @@ public class Queries
                         sender = reader.GetString(2),
                         timestamp = reader.GetDateTime(3).ToString("o"),
                         csrep = reader.GetBoolean(4),
-                        assignedCsRep = reader.IsDBNull(5) ? null : reader.GetString(5)
+                        assignedCsRep =  reader.IsDBNull(5) ? null : reader.GetString(5)
                     });
                 }
             }
@@ -124,10 +124,12 @@ public class Queries
 
         }
         var sorterdChats = new List<object>();
+        
+        // gets all unassigned chats
 
         foreach (dynamic chat in chats)
         {
-            if (!chat.csrep)
+            if (!chat.csrep && chat.assignedCsRep == null)
             {
                 sorterdChats.Add(chat);
             }
