@@ -44,8 +44,14 @@ const Arbetarsida = () => {
       </div>
       {data.map((chats, index) => (
         <div key={index} className={chats.csrep ? "openTicket" : "closedTicket"}> {/*Should be some kind of marker for when a ticket is closed here(grayed out?)*/}
+          <small>Last message from: {chats.sender}</small><br/>
           <small>{chats.message} </small><br />
           <small>{chats.timestamp}</small><br />
+          {chats.assignedCsRep != null && (
+              <>
+              <small>User assigned to this ticket: {chats.assignedCsRep}</small><br/>
+              </>
+            )}
           <Link to={`/Chat/${chats.chat}`}><button>Go to chat</button></Link>
           <button onClick={() => assignTicket(chats.chat, navigate)}>Go to chat and assign ticket</button>
         </div>

@@ -96,7 +96,7 @@ app.MapPost("/api/assignticket", async (HttpContext context) =>
     var body = await reader.ReadToEndAsync();
     var assignChat = JsonSerializer.Deserialize<User>(body);
 
-    assignChat.Id = Convert.ToInt32(context.Session.GetInt32("Id"));
+    assignChat.Id = Convert.ToInt32(context.Session.GetString("UserId"));
     assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
 
     if (assignChat.CsRep)

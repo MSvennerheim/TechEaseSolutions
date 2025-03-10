@@ -85,13 +85,14 @@ public class Queries
         var chats = new List<object>();
 
         const string sql = @"
-            SELECT DISTINCT ON (chatid) chatid, message, email, timestamp, csrep
-            FROM messages
-            JOIN users ON messages.sender = users.id
-            JOIN companies ON messages.company = companies.id
-            WHERE companies.name = @company
-            ORDER BY chatid, timestamp DESC";
-        
+            SELECT DISTINCT ON (chatid) chatid, message, u1.email AS lastmessagefrom, timestamp, u1.csrep, u2.email AS assignedcsrep
+                FROM messages
+                         JOIN users u1 ON messages.sender = u1.id
+                         JOIN companies ON messages.company = companies.id
+                         LEFT JOIN users u2 ON messages.assignedcsrep = u2.id 
+                WHERE companies.name = @company
+                ORDER BY chatid, timestamp DESC";
+                        
         
         
         
@@ -108,7 +109,8 @@ public class Queries
                         message = reader.GetString(1),
                         sender = reader.GetString(2),
                         timestamp = reader.GetDateTime(3).ToString("o"),
-                        csrep = reader.GetBoolean(4)
+                        csrep = reader.GetBoolean(4),
+                        assignedCsRep = reader.IsDBNull(5) ? null : reader.GetString(5)
                     });
                 }
             }
@@ -567,6 +569,8 @@ public class Queries
 
     public async Task assignChatToCsRep(User assignChat)
     {
+        
+        Console.WriteLine("chatid: "+ assignChat.ChatId + " csrep: " + assignChat.Id);
         const string assignTicket = @"UPDATE messages
                                         SET assignedcsrep = @csrep
                                         WHERE chatid = @chatid";
