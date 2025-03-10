@@ -564,7 +564,19 @@ public class Queries
 
         return true;
     }
-    
+
+    public async Task assignChatToCsRep(User assignChat)
+    {
+        const string assignTicket = @"UPDATE messages
+                                        SET assignedcsrep = @csrep
+                                        WHERE chatid = @chatid";
+
+        await using var cmd = _db.CreateCommand(assignTicket);
+        cmd.Parameters.AddWithValue("@csrep", assignChat.Id);
+        cmd.Parameters.AddWithValue("@chatid", assignChat.ChatId);
+        await cmd.ExecuteNonQueryAsync();
+        
+    }
     
     public async Task<string> CreatePasswordResetToken(string email)
     {

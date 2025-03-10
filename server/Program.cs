@@ -90,6 +90,23 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 
 });
 
+app.MapPost("/api/assignticket", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var assignChat = JsonSerializer.Deserialize<User>(body);
+
+    assignChat.Id = Convert.ToInt32(context.Session.GetInt32("Id"));
+    assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+
+    if (assignChat.CsRep)
+    {
+        await queries.assignChatToCsRep(assignChat);
+    }
+    
+});
+
+
 app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
     
@@ -333,7 +350,7 @@ app.MapPost("/api/form", async (HttpContext context) =>
             await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
             //Creates a new confirmation mail that gets sent to the user in question.
-            // newmail.generateNewIssue(ticketInformation);
+            newmail.generateNewIssue(ticketInformation);
             
             return Results.Ok();
         }

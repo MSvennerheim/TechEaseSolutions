@@ -30,22 +30,22 @@ const ChatHistory = () => {
     <div>
       <ul>
         {data.map((chat, index) => (
-          <li key={index}>
+          <div key={index}>
             <small>{chat.sender} skrev: </small><br />
             <small>{chat.message}</small><br />
             <small>{chat.timestamp}</small>
-          </li>
+          </div>
         ))}
       </ul>
 
-      <form onSubmit={sendToBackend}>
+      <form onSubmit={sendToBackend} style={{ opacity: data.length === 0 ? 0.5 : 1 }} >
         <input
           id="message"
           value={message}
           placeholder="Enter your message..."
           onChange={(e) => setMessage(e.target.value)}
         />
-        <button type="submit" onClick={updateSite} >Submit</button>
+        <button type="submit" onClick={updateSite} disabled={data.length === 0} >Submit</button>
       </form>
     </div>
   );

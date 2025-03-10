@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import assignTicket from "../Components/AssignTicket.jsx";
+import {useNavigate} from "react-router";
 
 const Arbetarsida = () => {
   const [data, setData] = useState([])
   const [updateTicker, setUpdateTicker] = useState(0)
   const [allChats, setAllChats] = useState(false)
-
+  const navigate = useNavigate();
 
   useEffect(() => {
     const GetChats = async () => {
@@ -45,12 +47,11 @@ const Arbetarsida = () => {
           <small>{chats.message} </small><br />
           <small>{chats.timestamp}</small><br />
           <Link to={`/Chat/${chats.chat}`}><button>Go to chat</button></Link>
+          <button onClick={() => assignTicket(chats.chat, navigate)}>Go to chat and assign ticket</button>
         </div>
       ))}
-    </div>
+    </div>  
   )
-
-
 }
 
 export default Arbetarsida;
