@@ -116,9 +116,26 @@ app.MapPost("/api/assignticket", async (HttpContext context) =>
     
 });
 
-app.MapPost("/api/assignNextTicket", async (HttpContext context) =>
+app.MapGet("/api/assignNextTicket", async (HttpContext context) =>
 {
+    User assignChat = new User();
+    assignChat.Id = Convert.ToInt32(context.Session.GetString("UserId"));
+    assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    assignChat.CompanyName = context.Session.GetString("CompanyName");
     
+    if (assignChat.CsRep)
+    {
+        var chatId = await queries.GetChatsForCsRep(assignChat.CompanyName, false, true);
+        Console.WriteLine(chatId);
+        if(chatId != "")
+        {
+            assignChat.ChatId = Convert.ToInt32(chatId);
+            await queries.assignChatToCsRep(assignChat);
+            return JsonSerializer.Serialize(chatId, new JsonSerializerOptions { WriteIndented = true });
+        }
+        return JsonSerializer.Serialize(chatId, new JsonSerializerOptions { WriteIndented = true });
+    }
+    return "";
 });
 
 
@@ -169,7 +186,7 @@ app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
     
     if (csRep)
     {
-        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats);
+        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats, false);
         return chats;
     }
     return "no access";

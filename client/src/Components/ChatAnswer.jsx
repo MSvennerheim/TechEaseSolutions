@@ -8,8 +8,6 @@ export function useSendChatAnswer() {
   const { chatId } = useParams();
 
   const sendToBackend = async (e) => {
-    e.preventDefault();
-
     await fetch(`/api/ChatResponse/${chatId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

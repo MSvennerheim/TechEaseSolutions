@@ -82,7 +82,7 @@ public class Queries
         return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });;
     }
 
-    public async Task<string> GetChatsForCsRep(string company, bool allChats)
+    public async Task<string> GetChatsForCsRep(string company, bool allChats, bool getChatForAssignment)
     {
         var chats = new List<object>();
 
@@ -128,7 +128,7 @@ public class Queries
         var sorterdChats = new List<object>();
         
         // gets all unassigned chats
-
+        
         foreach (dynamic chat in chats)
         {
             if (!chat.csrep && chat.assignedCsRep == null)
@@ -136,6 +136,21 @@ public class Queries
                 sorterdChats.Add(chat);
             }
         }
+        
+        // just get the chatId of the chat to return for assignment
+        // return as string and convert on other side, if empty string no more chats to assign
+        // I don't like this and I'm starting to regret not just making a new function for this...
+        
+        if (getChatForAssignment)
+        {
+            Console.WriteLine(sorterdChats);
+            if(sorterdChats.Count > 0){
+                dynamic firstUnnassignedChat = sorterdChats[0]; 
+                return Convert.ToString(firstUnnassignedChat.chat);
+            }
+            return "";
+        }
+        
         return JsonSerializer.Serialize(sorterdChats, new JsonSerializerOptions {WriteIndented = true});
     }
 
@@ -206,6 +221,7 @@ public class Queries
         }
 
         // if sender is csrep get email for customer and send them a confirmation
+        // and clear assignedcsrep
 
         if (chatData.csrep)
         {
@@ -222,17 +238,20 @@ public class Queries
                 cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    if (await reader.ReadAsync())
+                    while (await reader.ReadAsync())
                     {
                         customerEmail = reader.GetString(0);
                     }
-                    else
-                    {
-                        Console.WriteLine("Couldnt find customer mail, chatid: " + chatData.chatId);
-                    }
                 }
             }
-
+            const string clearCsRep = @"UPDATE messages
+                                            SET assignedcsrep = null
+                                            WHERE chatid = @chatid ";
+            await using (var cmd = _db.CreateCommand(clearCsRep))
+            {
+                cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
+                cmd.ExecuteNonQueryAsync();
+            }
             return customerEmail;
         }
 

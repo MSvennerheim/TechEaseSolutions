@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, {use, useEffect, useState} from "react";
 import { useParams } from "react-router-dom";
 import { useSendChatAnswer } from "../Components/ChatAnswer.jsx";
+import {useNavigate} from "react-router";
 
 const ChatHistory = () => {
   const { chatId } = useParams();
   const [data, setData] = useState([]);
   const [updateTicker, setUpdateTicker] = useState(0)
   const [isUserCsRep, setIsUserCsRep] = useState(false)
+  const navigate = useNavigate();
+  
 
 
   useEffect(() => {
@@ -16,7 +19,7 @@ const ChatHistory = () => {
       setData(responseData);
     };
     GetChats();
-  }, [updateTicker]);
+  }, [updateTicker, chatId]);
 
   useEffect(() => {
     const GetIsUserCsRep = async () => {
@@ -28,7 +31,8 @@ const ChatHistory = () => {
   }, []);
   
   const { message, setMessage, sendToBackend } = useSendChatAnswer();
-
+  
+  
 
   const updateSite = () => {
     setTimeout(() => {
@@ -36,10 +40,29 @@ const ChatHistory = () => {
     }, 1000);
   }
   
-  const sendToNextOpenTicket = () => {
-    
+  const handleResponse = async (sendToNextTicket) => {
+    await sendToBackend()
+    if (sendToNextTicket){
+      await sendToNextOpenTicket()
+    }  else {
+      updateSite()
+    }
+  }
+  
+  const sendToNextOpenTicket = async () => {
+    const nextChatResponse = await fetch(`/api/assignNextTicket`)
+    const nextChatResponseData = await nextChatResponse.json();
+    console.log(nextChatResponseData)
+    if(nextChatResponseData != null){
+    navigate(`/Chat/${nextChatResponseData}`)
+    }
+    else {
+      window.alert("no more chats to assign! Press ok to go back")
+      navigate(`/Arbetarsida/`)
+    }
   }
 
+  
 
   return (
     <div>
@@ -53,15 +76,15 @@ const ChatHistory = () => {
         ))}
       </ul>
 
-      <form onSubmit={sendToBackend} hidden={data.length === 0} >
+      <form onSubmit={(e) => e.preventDefault()} hidden={data.length === 0} >
         <input
           id="message"
           value={message}
           placeholder="Enter your message..."
           onChange={(e) => setMessage(e.target.value)}
         />
-        <button type="submit" onClick={updateSite}>Send</button>
-        <button type="submit" onClick={sendToNextOpenTicket} hidden={!isUserCsRep} >Send and take next open ticket</button>
+        <button type="submit" onClick={() => handleResponse(false)} disabled={message.length === 0}>Send</button>
+        <button type="submit" onClick={() => handleResponse(true)} hidden={!isUserCsRep} disabled={message.length === 0} >Send and take next open ticket</button>
       </form>
     </div>
   );
