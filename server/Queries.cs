@@ -17,7 +17,7 @@ public class Queries
     }
 
 
-    public async Task<string> GetChatHistory(User user)
+    public async Task<object> GetChatHistory(User user)
     {
 
         // get chat history for a specific chat using chatid as a JSON file
@@ -27,7 +27,7 @@ public class Queries
         if (!user.CsRep)
         {
             // Check if customer has any messages in chat, if not kick them out  
-
+            int sentMessages = 0;
             const string OriginalSender = @"SELECT count(chatid) 
                 FROM messages
                 JOIN users ON messages.sender = users.id
@@ -42,17 +42,18 @@ public class Queries
                 {
                     while (await reader.ReadAsync())
                     {
-                        if (1 < reader.GetInt32(0))
-                        {
-                            return "no access";
-                        }
+                        sentMessages = reader.GetInt32(0);
                     }
                 }
+            }
+            if (sentMessages == 0)
+            {
+                return "no access";
             }
         }
 
         const string ChatHistory =
-            @"SELECT message, email, timestamp
+            @"SELECT message, email, timestamp, csrep
                 FROM messages 
                 JOIN users ON messages.sender = users.id 
                 JOIN public.companies c on c.id = messages.company
@@ -71,13 +72,14 @@ public class Queries
                     {
                         message = reader.GetString(0),
                         sender = reader.GetString(1),
-                        timestamp = reader.GetDateTime(2).ToString("o")
+                        timestamp = reader.GetDateTime(2).ToString("o"),
+                        csrep = reader.GetBoolean(3)
                     });
                 }
             }
         }
 
-        return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });
+        return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });;
     }
 
     public async Task<string> GetChatsForCsRep(string company, bool allChats)

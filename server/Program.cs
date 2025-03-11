@@ -59,6 +59,16 @@ app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
     return companyDetails;
 });
 
+
+
+app.MapGet("/api/IsUserCsRep", async (HttpContext context) =>
+{
+    // this shit does what it supposed to, I hate it but I just want to get the chat done
+    // 2hrs wasted because I used MapPost instead of MapGet...
+    var csRep = context.Session.GetString("CsRep");
+    return JsonSerializer.Serialize(csRep, new JsonSerializerOptions { WriteIndented = true });
+});
+
 app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 {
     
@@ -73,17 +83,15 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
     };
 
-    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId + " user.CsRep: " + user.CsRep);
     if (chatId == user.ChatId && !user.CsRep)
     {
-        var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return await queries.GetChatHistory(user);
     } 
     if (user.CsRep)
     {
         user.ChatId = chatId;
-        var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return await queries.GetChatHistory(user);
     } 
     
     return "no chat found";
@@ -96,6 +104,8 @@ app.MapPost("/api/assignticket", async (HttpContext context) =>
     var body = await reader.ReadToEndAsync();
     var assignChat = JsonSerializer.Deserialize<User>(body);
 
+    // using Users ID here cause why not
+    
     assignChat.Id = Convert.ToInt32(context.Session.GetString("UserId"));
     assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
 
@@ -103,6 +113,11 @@ app.MapPost("/api/assignticket", async (HttpContext context) =>
     {
         await queries.assignChatToCsRep(assignChat);
     }
+    
+});
+
+app.MapPost("/api/assignNextTicket", async (HttpContext context) =>
+{
     
 });
 
