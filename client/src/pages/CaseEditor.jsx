@@ -39,27 +39,15 @@ function CaseEditor() {
     };
 
     //  Ta bort ett ämne
-        const handleDeleteTopic = async (id) => {
-            if (!id) {
-                setTopics(topics.filter(t => t.id !== null)); // Ta bort lokala, ej sparade topics
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/casetypes/${id}`, {
-                 method: "DELETE",
-                });
-
-                if (!response.ok) {
-                    throw new Error("Misslyckades med att ta bort ämnet.");
-                }
-
-                setTopics(topics.filter(t => t.id !== id));
-                alert("Ämnet har tagits bort!");
-            } catch (error) {
-                console.error("❌ Fel vid borttagning:", error);
-                alert("❌ Kunde inte ta bort ämnet.");
-            }
+        const handleDeleteTopic = async (caseId) => {
+            
+            const response = await fetch("/api/deleteCaseType", { // No ID in the URL
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ caseId }), // Send ID as JSON
+            });
         };
 
     return (
@@ -82,13 +70,16 @@ function CaseEditor() {
                     {topics.map((t, index) => (
                         <div key={index}>
                             <p value={t.caseType}><strong>CaseType</strong> {t.caseType ?? "N/A"}</p>
-                            <button onClick={() => handleDeleteTopic(t.id)}>🗑Ta bort</button>
+                            <p value={t.caseId}>ID: {t.caseId}</p>
+                            <button onClick={() => {
+                                handleDeleteTopic(t.caseId);
+                            }}>🗑Ta bort
+                            </button>
                         </div>
-                        
-                ))}
+                    ))}
+                </div>
+
             </div>
-                
-            </div> 
         </div>
     );
 }

@@ -648,6 +648,18 @@ public class Queries
                 await cmd.ExecuteNonQueryAsync();
             }
         }
+
+        public async Task removeCasetype(int id)
+        {
+            Console.WriteLine("Queries");
+            Console.WriteLine(id);
+            
+            await using (var cmd = _db.CreateCommand("DELETE FROM casetypes WHERE id = @id"))
+            {
+                cmd.Parameters.AddWithValue("@id", id);
+                await cmd.ExecuteNonQueryAsync(); // Exekvera SQL-kommandot
+            }
+        }
     
 }    
     

@@ -460,6 +460,15 @@ app.MapPost("/api/reset-password", async (HttpContext context) =>
     }
 });
 
+app.MapDelete("/api/deleteCaseType", async (HttpContext context) =>
+{
+    var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var data = JsonSerializer.Deserialize<CaseTypeDelete>(requestBody);
+    
+    Console.WriteLine(data.Id);
+    await queries.removeCasetype(data.Id);
+});
+
 app.Run();
 Console.ReadLine();
 
@@ -506,4 +515,9 @@ public class CaseTypeUpdate
 public class ChatSortingObject
 {
     public bool getAllChats { get; set; }
+}
+
+public class CaseTypeDelete
+{
+    public int Id { get; set; }
 }
