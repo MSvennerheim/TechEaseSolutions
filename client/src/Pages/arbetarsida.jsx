@@ -2,52 +2,28 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 const Arbetarsida = () => {
-  const { company } = useParams();
-  const [data, setData] = useState([]);
-  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
-
+  const { company } = useParams()
+  const [data, setData] = useState([])
   useEffect(() => {
     const GetAllChats = async () => {
-      const response = await fetch(`/api/arbetarsida/`);
-      const responseData = await response.json();
-      setData(responseData);
-    };
-    GetAllChats();
-  }, []);
+      const response = await fetch(`/api/arbetarsida/`)
+      const responseData = await response.json()
+      setData(responseData)
+      console.log(responseData)
+    }
+    GetAllChats()
+  }, [])
 
-  const filteredData = showOnlyAvailable 
-    ? data.filter(chat => !chat.csrep) 
-    : data;
 
   return (
-    <div className="worker-dashboard">
-      <div className="filter-section">
-        <div className="filter-checkbox">
-          <input
-            type="checkbox"
-            id="available-filter"
-            checked={showOnlyAvailable}
-            onChange={(e) => setShowOnlyAvailable(e.target.checked)}
-          />
-          <label htmlFor="available-filter">Visa endast tillgängliga ärenden</label>
+    <div>
+      {data.map((chats, index) => (
+        <div key={index} className={chats.csrep ? "openTicket" : "closedTicket"}> {/*Should be some kind of marker for when a ticket is closed here(grayed out?)*/}
+          <small>{chats.message} </small><br />
+          <small>{chats.timestamp}</small><br />
+          <Link to={`/Chat/${chats.chat}`}><button>Go to chat</button></Link>
         </div>
-      </div>
-
-      <div className="tickets-grid">
-        {filteredData.map((ticket, index) => (
-          <div key={index} className={ticket.csrep ? "closedTicket" : "openTicket"}>
-            <div className="ticket-content">
-              <div className="ticket-message">{ticket.message}</div>
-              <div className="ticket-timestamp">{ticket.timestamp}</div>
-            </div>
-            <Link to={`/Chat/${ticket.chat}`}>
-              <button className="ticket-button">
-                {ticket.csrep ? "Visa ärende" : "Ta ärende"}
-              </button>
-            </Link>
-          </div>
-        ))}
-      </div>
+      ))}
     </div>
   );
 };

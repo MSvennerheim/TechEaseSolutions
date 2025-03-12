@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(1); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
+    options.IdleTimeout = TimeSpan.FromMinutes(10); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
     options.Cookie.HttpOnly = true; // Skyddar så att cookien inte kan nås via js
     options.Cookie.IsEssential = true; // Cookien krävs för att sessionen ska kunna fungera
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // cookien skickas bara via https
@@ -73,7 +73,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
     };
 
-    Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
     if (chatId == user.ChatId && !user.CsRep)
     {
         var chatHistory = await queries.GetChatHistory(user);
@@ -90,7 +90,7 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 
 });
 
-app.MapPost("/api/ChatResponse/", async (HttpContext context) =>
+app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
     
     var chatId = int.Parse(context.Request.RouteValues["chatId"]?.ToString());
@@ -112,17 +112,32 @@ app.MapPost("/api/ChatResponse/", async (HttpContext context) =>
         await newmail.emailConfirmationOnAnswer(emailConfirmationAdress, chatData.chatId);
         Console.WriteLine("Email sent placeholder to email: " + emailConfirmationAdress);
     }
-    
 });
 
+app.MapGet("/api/GetCoWorker", async (HttpContext context) =>
+{
+    var company = context.Session.GetString("CompanyName");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
+    if (isAdmin)
+    {
+        var employees = await queries.GetEmployees(company);
+        return employees;
+    }
+    return null;
+});
 
-app.MapGet("/api/arbetarsida/", async (HttpContext context) =>
+app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
 {
     string company = context.Session.GetString("CompanyName");
     bool csRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var sortingObject = JsonSerializer.Deserialize<ChatSortingObject>(body);
+    
     if (csRep)
     {
-        var chats = await queries.GetChatsForCsRep(company);
+        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats);
         return chats;
     }
     return "no access";
@@ -243,6 +258,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
              // lagrar användarensinformation i sessionen
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
+            context.Session.SetInt32("company", user.Company);
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
             context.Session.SetString("CsRep", user.CsRep.ToString());
             context.Session.SetString("CompanyName", user.CompanyName);
@@ -270,6 +286,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
         return Results.BadRequest(new { message = "An error occurred during login." });
     }
 });
+
 // API-endpoint för att se om användaren skulle ha en aktiv session
 app.MapGet("/api/check-session", (HttpContext context) =>
 {
@@ -302,13 +319,13 @@ app.MapPost("/api/form", async (HttpContext context) =>
         using var reader = new StreamReader(context.Request.Body);
         var body = await reader.ReadToEndAsync();
         var ticketInformation = JsonSerializer.Deserialize<Ticket>(body);
-        
-        
-        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) || string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
+
+        if (ticketInformation == null || string.IsNullOrEmpty(ticketInformation.email) ||
+            string.IsNullOrEmpty(ticketInformation.option) || string.IsNullOrEmpty(ticketInformation.description))
         {
             return Results.BadRequest(new { message = "All fields have to be entered" });
         }
-        
+
         if (ticketInformation != null)
         {
             await queries.CompanyName(ticketInformation);
@@ -325,7 +342,94 @@ app.MapPost("/api/form", async (HttpContext context) =>
     {
         Console.WriteLine($"Error: {ex}");
     }
+
     return Results.BadRequest();
+});
+
+app.MapPost("/api/NewCustomerSupport", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var user = JsonSerializer.Deserialize<User>(body);
+    
+    Console.WriteLine("Program.cs");
+    int? Company = context.Session.GetInt32("company");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    
+
+    Console.WriteLine($"Company ID: {Company}, isAdmin: {isAdmin}");
+
+    if (Company == null)
+    {
+        return Results.BadRequest("Company ID is required.");
+    }
+
+    if (string.IsNullOrWhiteSpace(user.Email))
+    {
+        return Results.BadRequest("Email is required.");
+    }
+
+    if (isAdmin)
+    {
+        await queries.PostNewCsRep(Company.Value, user.Email);
+        return Results.Ok("Customer support rep added successfully.");
+    }
+
+    return Results.Forbid();
+});
+
+app.MapPost("api/deleteCsRep", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var user = JsonSerializer.Deserialize<User>(body);
+    
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    int Company = Convert.ToInt32(context.Session.GetInt32("company"));
+
+    // check so that only a session that's admin and for the same company can delete account
+    
+    if (isAdmin)
+    {
+        await queries.RemoveCsRep(Company, user.Email);
+        return Results.Ok("Customer support rep deleted.");
+    }
+
+    return Results.BadRequest("You do not have access to this function.");
+
+});
+
+
+// Reset password api
+app.MapPost("/api/reset-password", async (HttpContext context) =>
+{
+    try
+    {
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var resetData = JsonSerializer.Deserialize<PasswordResetRequest>(body);
+        
+        if (resetData == null || string.IsNullOrEmpty(resetData.email) || 
+            string.IsNullOrEmpty(resetData.token) || string.IsNullOrEmpty(resetData.newPassword))
+        {
+            return Results.BadRequest(new { message = "Email, token and new password are required" });
+        }
+        
+        bool resetSuccessful = await queries.ValidateTokenAndResetPassword(
+            resetData.email, resetData.token, resetData.newPassword);
+        
+        if (resetSuccessful)
+        {
+            return Results.Ok(new { message = "Password reset successful" });
+        }
+        
+        return Results.BadRequest(new { message = "Invalid or expired token" });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex}");
+        return Results.BadRequest(new { message = "An error occurred during password reset." });
+    }
 });
 
 app.Run();
@@ -337,7 +441,6 @@ public class LoginRequest
 {
     public string Email { get; set; }
     public string Password { get; set; }
-    
     public string ChatId { get; set; }
 }
 
@@ -350,4 +453,23 @@ public class ChatData
     // public string Company { get; set; }
     public bool csrep { get; set; }
 }
+public class NewCsRepRequest
+{
+    public string Email {get; set;}
+    public string CompanyName { get; set;}
+    public bool IsAdmin { get; set;}
+}
 
+// klass för passwordreset
+public class PasswordResetRequest
+{
+    public string email { get; set; }
+    public string token { get; set; }
+    public string newPassword { get; set; }
+}
+
+
+public class ChatSortingObject
+{
+    public bool getAllChats { get; set; }
+}
