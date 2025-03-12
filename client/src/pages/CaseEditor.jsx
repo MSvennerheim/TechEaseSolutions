@@ -7,10 +7,11 @@ function CaseEditor() {
     const [newTopic, setNewTopic] = useState("");
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-    
+    const [updateTicker, setUpdateTicker] = useState(0)
 
-    
-    
+
+
+
     // 🟢 Hämta casetypes från backend
     useEffect(() => {
         setLoading(true);
@@ -22,7 +23,7 @@ function CaseEditor() {
                 setError("Kunde inte hämta casetypes. Kontrollera backend.");
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [updateTicker]);
 
     // 🟢 Lägg till ett nytt ämne i UI (ej i databasen än)
     const handleAddTopic = async () => {
@@ -38,6 +39,7 @@ function CaseEditor() {
             }),
                 })
             ;}
+        updateSite();
     };
 
     //  Ta bort ett ämne
@@ -50,7 +52,14 @@ function CaseEditor() {
                 },
                 body: JSON.stringify({ caseId }), // Send ID as JSON
             });
+            updateSite();
         };
+
+    const updateSite = () => {
+        setTimeout(() => {
+            setUpdateTicker(updateTicker + 1)
+        }, 200);
+    }
 
     return (
         <div>
