@@ -126,7 +126,6 @@ app.MapGet("/api/assignNextTicket", async (HttpContext context) =>
     if (assignChat.CsRep)
     {
         var chatId = await queries.GetChatsForCsRep(assignChat.CompanyName, false, true);
-        Console.WriteLine(chatId);
         if(chatId != "")
         {
             assignChat.ChatId = Convert.ToInt32(chatId);
@@ -310,8 +309,6 @@ app.MapPost("/api/login", async (HttpContext context) =>
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
             context.Session.SetString("CsRep", user.CsRep.ToString());
             context.Session.SetString("CompanyName", user.CompanyName);
-
-            
             
             // Retunerar inloggningsdata
             return Results.Ok(new { 

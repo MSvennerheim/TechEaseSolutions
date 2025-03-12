@@ -19,9 +19,8 @@ public class Queries
 
     public async Task<object> GetChatHistory(User user)
     {
-
-        // get chat history for a specific chat using chatid as a JSON file
-
+        
+        // get chat history for a specific chat using chatid
         var messages = new List<object>();
 
         if (!user.CsRep)
@@ -72,13 +71,12 @@ public class Queries
                     {
                         message = reader.GetString(0),
                         sender = reader.GetString(1),
-                        timestamp = reader.GetDateTime(2).ToString("o"),
+                        timestamp = reader.GetDateTime(2).ToString("dd/MM/yy HH:mm"),
                         csrep = reader.GetBoolean(3)
                     });
                 }
             }
         }
-
         return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });;
     }
 
@@ -87,16 +85,14 @@ public class Queries
         var chats = new List<object>();
 
         const string sql = @"
-            SELECT DISTINCT ON (chatid) chatid, message, u1.email AS lastmessagefrom, timestamp, u1.csrep, u2.email AS assignedcsrep
+            SELECT DISTINCT ON (chatid) chatid, message, u1.email AS lastmessagefrom, timestamp, u1.csrep, u2.email AS assignedcsrep, text
                 FROM messages
                          JOIN users u1 ON messages.sender = u1.id
                          JOIN companies ON messages.company = companies.id
                          LEFT JOIN users u2 ON messages.assignedcsrep = u2.id 
+                         JOIN casetypes ON messages.casetype = casetypes.id
                 WHERE companies.name = @company
                 ORDER BY chatid, timestamp DESC";
-                        
-        
-        
         
         await using (var cmd = _db.CreateCommand(sql))
         {
@@ -110,9 +106,10 @@ public class Queries
                         chat = reader.GetInt32(0),
                         message = reader.GetString(1),
                         sender = reader.GetString(2),
-                        timestamp = reader.GetDateTime(3).ToString("o"),
+                        timestamp = reader.GetDateTime(3).ToString("dd/MM/yy HH:mm"),
                         csrep = reader.GetBoolean(4),
-                        assignedCsRep =  reader.IsDBNull(5) ? null : reader.GetString(5)
+                        assignedCsRep =  reader.IsDBNull(5) ? null : reader.GetString(5),
+                        casetype = reader.GetString(6)
                     });
                 }
             }
@@ -123,7 +120,6 @@ public class Queries
         if (allChats)
         {
             return JsonSerializer.Serialize(chats, new JsonSerializerOptions {WriteIndented = true});
-
         }
         var sorterdChats = new List<object>();
         
@@ -137,20 +133,18 @@ public class Queries
             }
         }
         
-        // just get the chatId of the chat to return for assignment
+        // just get the chatId of the chat to return for assignment when "send and get next open ticket" is clicked
         // return as string and convert on other side, if empty string no more chats to assign
         // I don't like this and I'm starting to regret not just making a new function for this...
         
         if (getChatForAssignment)
         {
-            Console.WriteLine(sorterdChats);
             if(sorterdChats.Count > 0){
                 dynamic firstUnnassignedChat = sorterdChats[0]; 
                 return Convert.ToString(firstUnnassignedChat.chat);
             }
             return "";
         }
-        
         return JsonSerializer.Serialize(sorterdChats, new JsonSerializerOptions {WriteIndented = true});
     }
 

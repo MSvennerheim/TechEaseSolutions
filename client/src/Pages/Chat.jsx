@@ -69,9 +69,9 @@ const ChatHistory = () => {
       <ul>
         {data.map((chat, index) => (
           <div key={index} className={chat.csrep === true ? 'fromCsRep' : 'fromCustomer'}>
-            <small>{chat.sender} skrev: </small><br />
+            <small>Avsändare: {chat.sender} </small><br />
             <small>{chat.message}</small><br />
-            <small>{chat.timestamp}</small>
+            <small>Skickat: {chat.timestamp}</small>
           </div>
         ))}
       </ul>
