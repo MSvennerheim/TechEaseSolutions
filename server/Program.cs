@@ -200,59 +200,58 @@ app.MapPost("/api/guestLogin", async (HttpContext context) =>
 
     try
     {
-        
-    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
-    {
-        return Results.BadRequest(new { message = "Email and chat are required" });
-    }
+        if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
+        {
+            return Results.BadRequest(new { message = "Email and chat are required" });
+        }
 
-    string decodedEmail = Uri.UnescapeDataString(loginData.Email);
-    Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
-    var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
-    if (user != null)
-    {
-        var authProperties = new AuthenticationProperties
-        { 
-            IsPersistent = true, 
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
-        };
-            
-            await context.SignInAsync(
-                "CookieAuth",  
-                new ClaimsPrincipal(new ClaimsIdentity(
-                    new[] {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email), 
-                        new Claim("IsAdmin", user.IsAdmin.ToString()), 
-                        new Claim("CsRep", user.CsRep.ToString()) ,
-                    },
-                    "CookieAuth")),
-                authProperties
-            );
-            context.Session.SetString("UserId", user.Id.ToString());
-            context.Session.SetString("UserEmail", user.Email);
-            context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
-            context.Session.SetString("CsRep", user.CsRep.ToString());
-            context.Session.SetString("CompanyName", user.CompanyName);
-            context.Session.SetInt32("ChatId", user.ChatId);
+        string decodedEmail = Uri.UnescapeDataString(loginData.Email);
+        Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
+        var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
+        if (user != null)
+        {
+            var authProperties = new AuthenticationProperties
+            { 
+                IsPersistent = true, 
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
+            };
+                
+                await context.SignInAsync(
+                    "CookieAuth",  
+                    new ClaimsPrincipal(new ClaimsIdentity(
+                        new[] {
+                            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                            new Claim(ClaimTypes.Email, user.Email), 
+                            new Claim("IsAdmin", user.IsAdmin.ToString()), 
+                            new Claim("CsRep", user.CsRep.ToString()) ,
+                        },
+                        "CookieAuth")),
+                    authProperties
+                );
+                context.Session.SetString("UserId", user.Id.ToString());
+                context.Session.SetString("UserEmail", user.Email);
+                context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
+                context.Session.SetString("CsRep", user.CsRep.ToString());
+                context.Session.SetString("CompanyName", user.CompanyName);
+                context.Session.SetInt32("ChatId", user.ChatId);
 
-            
-            
-            // Retunerar inloggningsdata
-            return Results.Ok(new { 
-                token = "test-token",
-                user = new {
-                    id = user.Id,
-                    email = user.Email,
-                    company = user.Company,
-                    companyName = user.CompanyName,
-                    csRep = user.CsRep,
-                    isAdmin = user.IsAdmin,
-                    chatId = user.ChatId
-                }
-            }); 
-    }
-    return Results.Unauthorized(); 
+                
+                
+                // Retunerar inloggningsdata
+                return Results.Ok(new { 
+                    token = "test-token",
+                    user = new {
+                        id = user.Id,
+                        email = user.Email,
+                        company = user.Company,
+                        companyName = user.CompanyName,
+                        csRep = user.CsRep,
+                        isAdmin = user.IsAdmin,
+                        chatId = user.ChatId
+                    }
+                }); 
+        }
+        return Results.Unauthorized(); 
     }
     catch (Exception ex)
     {
