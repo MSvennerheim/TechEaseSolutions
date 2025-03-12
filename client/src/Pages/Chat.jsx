@@ -37,7 +37,7 @@ const ChatHistory = () => {
   const updateSite = () => {
     setTimeout(() => {
       setUpdateTicker(updateTicker + 1)
-    }, 1000);
+    }, 200);
   }
   
   const handleResponse = async (sendToNextTicket) => {
@@ -53,7 +53,7 @@ const ChatHistory = () => {
     const nextChatResponse = await fetch(`/api/assignNextTicket`)
     const nextChatResponseData = await nextChatResponse.json();
     console.log(nextChatResponseData)
-    if(nextChatResponseData != null){
+    if(nextChatResponseData != ""){
     navigate(`/Chat/${nextChatResponseData}`)
     }
     else {
