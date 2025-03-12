@@ -17,7 +17,7 @@ function PasswordResetForm() {
   const [passwordStrength, setPasswordStrength] = useState('');
 
   useEffect(() => {
-    // Get email and token from URL parameters
+    // få token och email från URL-parametrar
     const email = searchParams.get('email');
     const token = searchParams.get('token');
     
@@ -39,7 +39,7 @@ function PasswordResetForm() {
       [name]: value
     }));
 
-    // Check password strength when password field changes
+    // kolla lösenordets styrka när det ändras
     if (name === 'newPassword') {
       checkPasswordStrength(value);
     }
@@ -51,7 +51,7 @@ function PasswordResetForm() {
       return;
     }
     
-    // Simple password strength check
+    // enkel lösenordsstyrka-kontrollering
     if (password.length < 6) {
       setPasswordStrength('weak');
     } else if (password.length < 10 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
@@ -80,7 +80,7 @@ function PasswordResetForm() {
     setError('');
     setMessage('');
 
-    // Validate passwords
+    // validera lösenordet innan vi skickar den till servern
     if (!validatePassword()) {
       return;
     }
@@ -104,7 +104,7 @@ function PasswordResetForm() {
 
       if (response.ok) {
         setMessage('Password set successfully! Redirecting to login...');
-        // Redirect to login page after 3 seconds
+        // redierctar användaren till loginsidan efter 3 sekunder
         setTimeout(() => {
           navigate('/login');
         }, 3000);

@@ -17,7 +17,7 @@ public class Queries
     }
 
 
-    public async Task<string> GetChatHistory(User user)
+    public async Task<object> GetChatHistory(User user)
     {
 
         // get chat history for a specific chat using chatid as a JSON file
@@ -27,7 +27,7 @@ public class Queries
         if (!user.CsRep)
         {
             // Check if customer has any messages in chat, if not kick them out  
-
+            int sentMessages = 0;
             const string OriginalSender = @"SELECT count(chatid) 
                 FROM messages
                 JOIN users ON messages.sender = users.id
@@ -42,17 +42,18 @@ public class Queries
                 {
                     while (await reader.ReadAsync())
                     {
-                        if (1 < reader.GetInt32(0))
-                        {
-                            return "no access";
-                        }
+                        sentMessages = reader.GetInt32(0);
                     }
                 }
+            }
+            if (sentMessages == 0)
+            {
+                return "no access";
             }
         }
 
         const string ChatHistory =
-            @"SELECT message, email, timestamp
+            @"SELECT message, email, timestamp, csrep
                 FROM messages 
                 JOIN users ON messages.sender = users.id 
                 JOIN public.companies c on c.id = messages.company
@@ -71,27 +72,29 @@ public class Queries
                     {
                         message = reader.GetString(0),
                         sender = reader.GetString(1),
-                        timestamp = reader.GetDateTime(2).ToString("o")
+                        timestamp = reader.GetDateTime(2).ToString("o"),
+                        csrep = reader.GetBoolean(3)
                     });
                 }
             }
         }
 
-        return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });
+        return JsonSerializer.Serialize(messages, new JsonSerializerOptions { WriteIndented = true });;
     }
 
-    public async Task<string> GetChatsForCsRep(string company, bool allChats)
+    public async Task<string> GetChatsForCsRep(string company, bool allChats, bool getChatForAssignment)
     {
         var chats = new List<object>();
 
         const string sql = @"
-            SELECT DISTINCT ON (chatid) chatid, message, email, timestamp, csrep
-            FROM messages
-            JOIN users ON messages.sender = users.id
-            JOIN companies ON messages.company = companies.id
-            WHERE companies.name = @company
-            ORDER BY chatid, timestamp DESC";
-        
+            SELECT DISTINCT ON (chatid) chatid, message, u1.email AS lastmessagefrom, timestamp, u1.csrep, u2.email AS assignedcsrep
+                FROM messages
+                         JOIN users u1 ON messages.sender = u1.id
+                         JOIN companies ON messages.company = companies.id
+                         LEFT JOIN users u2 ON messages.assignedcsrep = u2.id 
+                WHERE companies.name = @company
+                ORDER BY chatid, timestamp DESC";
+                        
         
         
         
@@ -108,7 +111,8 @@ public class Queries
                         message = reader.GetString(1),
                         sender = reader.GetString(2),
                         timestamp = reader.GetDateTime(3).ToString("o"),
-                        csrep = reader.GetBoolean(4)
+                        csrep = reader.GetBoolean(4),
+                        assignedCsRep =  reader.IsDBNull(5) ? null : reader.GetString(5)
                     });
                 }
             }
@@ -122,14 +126,31 @@ public class Queries
 
         }
         var sorterdChats = new List<object>();
-
+        
+        // gets all unassigned chats
+        
         foreach (dynamic chat in chats)
         {
-            if (!chat.csrep)
+            if (!chat.csrep && chat.assignedCsRep == null)
             {
                 sorterdChats.Add(chat);
             }
         }
+        
+        // just get the chatId of the chat to return for assignment
+        // return as string and convert on other side, if empty string no more chats to assign
+        // I don't like this and I'm starting to regret not just making a new function for this...
+        
+        if (getChatForAssignment)
+        {
+            Console.WriteLine(sorterdChats);
+            if(sorterdChats.Count > 0){
+                dynamic firstUnnassignedChat = sorterdChats[0]; 
+                return Convert.ToString(firstUnnassignedChat.chat);
+            }
+            return "";
+        }
+        
         return JsonSerializer.Serialize(sorterdChats, new JsonSerializerOptions {WriteIndented = true});
     }
 
@@ -200,6 +221,7 @@ public class Queries
         }
 
         // if sender is csrep get email for customer and send them a confirmation
+        // and clear assignedcsrep
 
         if (chatData.csrep)
         {
@@ -216,17 +238,20 @@ public class Queries
                 cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    if (await reader.ReadAsync())
+                    while (await reader.ReadAsync())
                     {
                         customerEmail = reader.GetString(0);
                     }
-                    else
-                    {
-                        Console.WriteLine("Couldnt find customer mail, chatid: " + chatData.chatId);
-                    }
                 }
             }
-
+            const string clearCsRep = @"UPDATE messages
+                                            SET assignedcsrep = null
+                                            WHERE chatid = @chatid ";
+            await using (var cmd = _db.CreateCommand(clearCsRep))
+            {
+                cmd.Parameters.AddWithValue("@chatId", chatData.chatId);
+                cmd.ExecuteNonQueryAsync();
+            }
             return customerEmail;
         }
 
@@ -563,7 +588,21 @@ public class Queries
 
         return true;
     }
-    
+
+    public async Task assignChatToCsRep(User assignChat)
+    {
+        
+        Console.WriteLine("chatid: "+ assignChat.ChatId + " csrep: " + assignChat.Id);
+        const string assignTicket = @"UPDATE messages
+                                        SET assignedcsrep = @csrep
+                                        WHERE chatid = @chatid";
+
+        await using var cmd = _db.CreateCommand(assignTicket);
+        cmd.Parameters.AddWithValue("@csrep", assignChat.Id);
+        cmd.Parameters.AddWithValue("@chatid", assignChat.ChatId);
+        await cmd.ExecuteNonQueryAsync();
+        
+    }
     
     public async Task<string> CreatePasswordResetToken(string email)
     {

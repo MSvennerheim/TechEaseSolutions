@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import assignTicket from "../Components/AssignTicket.jsx";
+import {useNavigate} from "react-router";
 
 const Arbetarsida = () => {
   const [data, setData] = useState([])
   const [updateTicker, setUpdateTicker] = useState(0)
   const [allChats, setAllChats] = useState(false)
-
+  const navigate = useNavigate();
 
   useEffect(() => {
     const GetChats = async () => {
@@ -42,15 +44,20 @@ const Arbetarsida = () => {
       </div>
       {data.map((chats, index) => (
         <div key={index} className={chats.csrep ? "openTicket" : "closedTicket"}> {/*Should be some kind of marker for when a ticket is closed here(grayed out?)*/}
+          <small>Last message from: {chats.sender}</small><br/>
           <small>{chats.message} </small><br />
           <small>{chats.timestamp}</small><br />
+          {chats.assignedCsRep != null && (
+              <>
+              <small>User assigned to this ticket: {chats.assignedCsRep}</small><br/>
+              </>
+            )}
           <Link to={`/Chat/${chats.chat}`}><button>Go to chat</button></Link>
+          <button onClick={() => assignTicket(chats.chat, navigate)}>Go to chat and assign ticket</button>
         </div>
       ))}
-    </div>
+    </div>  
   )
-
-
 }
 
 export default Arbetarsida;

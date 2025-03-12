@@ -59,6 +59,16 @@ app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
     return companyDetails;
 });
 
+
+
+app.MapGet("/api/IsUserCsRep", async (HttpContext context) =>
+{
+    // this shit does what it supposed to, I hate it but I just want to get the chat done
+    // 2hrs wasted because I used MapPost instead of MapGet...
+    var csRep = context.Session.GetString("CsRep");
+    return JsonSerializer.Serialize(csRep, new JsonSerializerOptions { WriteIndented = true });
+});
+
 app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 {
     
@@ -73,22 +83,61 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
     };
 
-    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId + " user.CsRep: " + user.CsRep);
     if (chatId == user.ChatId && !user.CsRep)
     {
-        var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return await queries.GetChatHistory(user);
     } 
     if (user.CsRep)
     {
         user.ChatId = chatId;
-        var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return await queries.GetChatHistory(user);
     } 
     
     return "no chat found";
 
 });
+
+app.MapPost("/api/assignticket", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var assignChat = JsonSerializer.Deserialize<User>(body);
+
+    // using Users ID here cause why not
+    
+    assignChat.Id = Convert.ToInt32(context.Session.GetString("UserId"));
+    assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+
+    if (assignChat.CsRep)
+    {
+        await queries.assignChatToCsRep(assignChat);
+    }
+    
+});
+
+app.MapGet("/api/assignNextTicket", async (HttpContext context) =>
+{
+    User assignChat = new User();
+    assignChat.Id = Convert.ToInt32(context.Session.GetString("UserId"));
+    assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    assignChat.CompanyName = context.Session.GetString("CompanyName");
+    
+    if (assignChat.CsRep)
+    {
+        var chatId = await queries.GetChatsForCsRep(assignChat.CompanyName, false, true);
+        Console.WriteLine(chatId);
+        if(chatId != "")
+        {
+            assignChat.ChatId = Convert.ToInt32(chatId);
+            await queries.assignChatToCsRep(assignChat);
+            return JsonSerializer.Serialize(chatId, new JsonSerializerOptions { WriteIndented = true });
+        }
+        return JsonSerializer.Serialize(chatId, new JsonSerializerOptions { WriteIndented = true });
+    }
+    return "";
+});
+
 
 app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
@@ -137,7 +186,7 @@ app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
     
     if (csRep)
     {
-        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats);
+        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats, false);
         return chats;
     }
     return "no access";
@@ -151,59 +200,58 @@ app.MapPost("/api/guestLogin", async (HttpContext context) =>
 
     try
     {
-        
-    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
-    {
-        return Results.BadRequest(new { message = "Email and chat are required" });
-    }
+        if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
+        {
+            return Results.BadRequest(new { message = "Email and chat are required" });
+        }
 
-    string decodedEmail = Uri.UnescapeDataString(loginData.Email);
-    Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
-    var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
-    if (user != null)
-    {
-        var authProperties = new AuthenticationProperties
-        { 
-            IsPersistent = true, 
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
-        };
-            
-            await context.SignInAsync(
-                "CookieAuth",  
-                new ClaimsPrincipal(new ClaimsIdentity(
-                    new[] {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email), 
-                        new Claim("IsAdmin", user.IsAdmin.ToString()), 
-                        new Claim("CsRep", user.CsRep.ToString()) ,
-                    },
-                    "CookieAuth")),
-                authProperties
-            );
-            context.Session.SetString("UserId", user.Id.ToString());
-            context.Session.SetString("UserEmail", user.Email);
-            context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
-            context.Session.SetString("CsRep", user.CsRep.ToString());
-            context.Session.SetString("CompanyName", user.CompanyName);
-            context.Session.SetInt32("ChatId", user.ChatId);
+        string decodedEmail = Uri.UnescapeDataString(loginData.Email);
+        Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
+        var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
+        if (user != null)
+        {
+            var authProperties = new AuthenticationProperties
+            { 
+                IsPersistent = true, 
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
+            };
+                
+                await context.SignInAsync(
+                    "CookieAuth",  
+                    new ClaimsPrincipal(new ClaimsIdentity(
+                        new[] {
+                            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                            new Claim(ClaimTypes.Email, user.Email), 
+                            new Claim("IsAdmin", user.IsAdmin.ToString()), 
+                            new Claim("CsRep", user.CsRep.ToString()) ,
+                        },
+                        "CookieAuth")),
+                    authProperties
+                );
+                context.Session.SetString("UserId", user.Id.ToString());
+                context.Session.SetString("UserEmail", user.Email);
+                context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
+                context.Session.SetString("CsRep", user.CsRep.ToString());
+                context.Session.SetString("CompanyName", user.CompanyName);
+                context.Session.SetInt32("ChatId", user.ChatId);
 
-            
-            
-            // Retunerar inloggningsdata
-            return Results.Ok(new { 
-                token = "test-token",
-                user = new {
-                    id = user.Id,
-                    email = user.Email,
-                    company = user.Company,
-                    companyName = user.CompanyName,
-                    csRep = user.CsRep,
-                    isAdmin = user.IsAdmin,
-                    chatId = user.ChatId
-                }
-            }); 
-    }
-    return Results.Unauthorized(); 
+                
+                
+                // Retunerar inloggningsdata
+                return Results.Ok(new { 
+                    token = "test-token",
+                    user = new {
+                        id = user.Id,
+                        email = user.Email,
+                        company = user.Company,
+                        companyName = user.CompanyName,
+                        csRep = user.CsRep,
+                        isAdmin = user.IsAdmin,
+                        chatId = user.ChatId
+                    }
+                }); 
+        }
+        return Results.Unauthorized(); 
     }
     catch (Exception ex)
     {
@@ -333,7 +381,7 @@ app.MapPost("/api/form", async (HttpContext context) =>
             await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
             //Creates a new confirmation mail that gets sent to the user in question.
-            // newmail.generateNewIssue(ticketInformation);
+            newmail.generateNewIssue(ticketInformation);
             
             return Results.Ok();
         }
