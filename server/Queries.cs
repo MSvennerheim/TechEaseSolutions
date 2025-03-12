@@ -361,7 +361,6 @@ public class Queries
                         return;
                     }
                 }
-
             }
         }
 
@@ -440,7 +439,7 @@ public class Queries
         var caseTypesList = new List<object>();
 
         await using (var cmd = _db.CreateCommand(
-                         "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @name"))
+                         "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @name AND casetypes.isactive = true"))
         {
             cmd.Parameters.AddWithValue("@name", name);
 
@@ -608,14 +607,13 @@ public class Queries
             insertCmd.Parameters.AddWithValue("expiryDate", expiryDate);
             await insertCmd.ExecuteNonQueryAsync();
         }
-    
         return token;
     }
         public async Task<string> GetCaseTypes(string company)
         {
             var caseTypesList = new List<object>();
             await using (var cmd = _db.CreateCommand(
-                             "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @company"))
+                             "SELECT casetypes.id, casetypes.text FROM casetypes INNER JOIN public.companies c ON c.id = casetypes.company WHERE c.name = @company AND casetypes.isactive = true"))
             {
                 cmd.Parameters.AddWithValue("@company", company);
     
@@ -631,7 +629,6 @@ public class Queries
                     }
                 }
             }
-    
             return JsonSerializer.Serialize(caseTypesList, new JsonSerializerOptions { WriteIndented = true });
         }
     
@@ -651,22 +648,13 @@ public class Queries
 
         public async Task removeCasetype(int id)
         {
-            Console.WriteLine("Queries");
-            Console.WriteLine(id);
-            
-            await using (var cmd = _db.CreateCommand("DELETE FROM casetypes WHERE id = @id"))
+            await using (var cmd = _db.CreateCommand("UPDATE casetypes SET isactive = false WHERE id = @id"))
             {
                 cmd.Parameters.AddWithValue("@id", id);
                 await cmd.ExecuteNonQueryAsync(); // Exekvera SQL-kommandot
             }
         }
-    
 }    
-    
-    
-    
-
-
 
     public class User
     {

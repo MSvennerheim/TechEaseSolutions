@@ -9,6 +9,8 @@ function CaseEditor() {
     const [loading, setLoading] = useState(false);
     
 
+    
+    
     // 🟢 Hämta casetypes från backend
     useEffect(() => {
         setLoading(true);
@@ -52,32 +54,33 @@ function CaseEditor() {
 
     return (
         <div>
-            <h2>Redigera ämnen för företag {companyId}</h2>
+            <h1>Edit Form</h1>
 
             {loading && <p>🔄 Laddar data...</p>}
             {error && <p style={{ color: "red" }}>❌ {error}</p>}
 
             <div id="modifywrapper">
-                <textarea 
-                    value={newTopic} 
-                    onChange={(e) => setNewTopic(e.target.value)}
-                    placeholder="Skriv ett nytt ämne..."
-                    className="topic"
-                />
-                <button onClick={handleAddTopic}>Lägg till</button>
+                <div className="addNewTopic">                
+                    <input
+                        value={newTopic}
+                        onChange={(e) => setNewTopic(e.target.value)}
+                        placeholder="Skriv ett nytt ämne..."
+                        className="topic"
+                    />
+                    <button onClick={handleAddTopic} className="newTopicButton">Lägg till</button>
+                </div>
 
-                <div className="caseTypeLayout">
+
+
                     {topics.map((t, index) => (
-                        <div key={index}>
-                            <p value={t.caseType}><strong>CaseType</strong> {t.caseType ?? "N/A"}</p>
-                            <p value={t.caseId}>ID: {t.caseId}</p>
+                        <div key={index} id="caseTypeLayout">
+                            <p value={t.caseType} className="caseTypeText"> {t.caseType ?? "N/A"}</p>
                             <button onClick={() => {
                                 handleDeleteTopic(t.caseId);
-                            }}>🗑Ta bort
+                            }} id="delete-button">🗑Ta bort
                             </button>
                         </div>
                     ))}
-                </div>
 
             </div>
         </div>

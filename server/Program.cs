@@ -465,8 +465,14 @@ app.MapDelete("/api/deleteCaseType", async (HttpContext context) =>
     var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
     var data = JsonSerializer.Deserialize<CaseTypeDelete>(requestBody);
     
-    Console.WriteLine(data.Id);
-    await queries.removeCasetype(data.Id);
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    if (isAdmin)
+    {
+        await queries.removeCasetype(data.caseId);
+        Console.WriteLine("Case type deleted successfully.");
+    }
+    
+    
 });
 
 app.Run();
@@ -519,5 +525,5 @@ public class ChatSortingObject
 
 public class CaseTypeDelete
 {
-    public int Id { get; set; }
+    public int caseId { get; set; }
 }
