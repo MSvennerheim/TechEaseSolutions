@@ -31,8 +31,8 @@ export function userInformation() {
                 }),
             });
             const data = await response.json();
-
-            if (response.ok) {
+                console.log("data: " + data)
+            if (data.ok) {
                 return true;  // Return true if submission is successful
             } else {
                 throw new Error("Failed to submit the ticket");

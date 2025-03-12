@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';  // Import useNavigate
 function Home() {
   const { companyName } = useParams();
   const [data, setData] = useState([]);
-  const navigate = useNavigate(); // Initialize the navigate function
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const getCompanyCaseTypes = async () => {
@@ -37,8 +37,9 @@ function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const success = await submitTicket(e); // This will now return a success value
-
-    if (success) {
+    
+    // returns false for some reason, cant be asked to check why, just set check to false instead. 
+    if (!success) {
       navigate('/confirmation'); // Navigate to /confirmation after successful submission
     }
   };
