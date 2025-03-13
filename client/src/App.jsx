@@ -3,7 +3,7 @@ import Login from './Pages/LoginUI.jsx';
 import Redigeramedarbetare from './Pages/redigeramedarbetare.jsx';
 import Adminsida from "./Pages/Adminsida.jsx";
 import Arbetarsida from "./Pages/Arbetarsida.jsx";
-import KontaktaOss from "./Pages/Kontaktaoss.jsx";
+import KontaktaOss from "./Pages/KontaktaOss.jsx";
 import Confirmationsida from "./Pages/confirmationsida.jsx";
 import ChatHistory from "./pages/Chat.jsx"
 import PasswordresetForm from "./Pages/PasswordresetForm.jsx";
@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/confirmation" element={<Confirmationsida />} />
         <Route path="/reset-password" element={<PasswordresetForm />} />
-        <Route path="/kontaktaoss/:companyName" element={<KontaktaOss />} />
+        <Route path="/kontaktaoss/:company?" element={<KontaktaOss />} />
         {/* Skyddad routes */}
         <Route path="/Arbetarsida" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Adminsida /></ProtectedRoute>} />

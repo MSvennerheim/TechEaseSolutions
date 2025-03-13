@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDistributedMemoryCache();  // bra att veta att detta använder minnescache för sessioner
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(10); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
+    options.IdleTimeout = TimeSpan.FromMinutes(120); //om du är inaktiv så kommer du bli utloggad efter en vis tid har satt en minut för tester
     options.Cookie.HttpOnly = true; // Skyddar så att cookien inte kan nås via js
     options.Cookie.IsEssential = true; // Cookien krävs för att sessionen ska kunna fungera
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // cookien skickas bara via https
@@ -61,10 +61,6 @@ app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
 
 app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 {
-    
-    // as long as your session is logged in to the correct company you can access the chat. 
-    // if you're a customer query checks if you're the sender of a message in chat. 
-    
     var user = new User
     {
         Email = context.Session.GetString("UserEmail"),
@@ -73,21 +69,24 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
     };
 
-    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    Console.WriteLine($"API Call - Email: {user.Email}, Company: {user.CompanyName}, ChatId: {chatId}, CsRep: {user.CsRep}");
+
     if (chatId == user.ChatId && !user.CsRep)
     {
+        Console.WriteLine("Customer accessing their own chat");
         var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return Results.Content(chatHistory, "application/json");
     } 
     if (user.CsRep)
     {
+        Console.WriteLine("CS Rep accessing chat");
         user.ChatId = chatId;
         var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return Results.Content(chatHistory, "application/json");
     } 
     
-    return "no chat found";
-
+    Console.WriteLine("Access denied - neither customer's own chat nor CS Rep");
+    return Results.NotFound("no chat found");
 });
 
 app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
@@ -143,71 +142,74 @@ app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
     return "no access";
 });
 
-app.MapPost("/api/guestLogin", async (HttpContext context) =>
+app.MapGet("/api/arbetarsida", async (HttpContext context) =>
 {
-    using var reader = new StreamReader(context.Request.Body);
-    var body = await reader.ReadToEndAsync();
-    var loginData = JsonSerializer.Deserialize<LoginRequest>(body);
+    var user = new User
+    {
+        Email = context.Session.GetString("UserEmail"),
+        CompanyName = context.Session.GetString("CompanyName"),
+        CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"))
+    };
 
-    try
+    if (user.CsRep)
     {
-        
-    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
-    {
-        return Results.BadRequest(new { message = "Email and chat are required" });
+        var chats = await queries.GetChatsForCsRep(user.CompanyName, true);
+        return Results.Ok(chats);
     }
 
-    string decodedEmail = Uri.UnescapeDataString(loginData.Email);
-    Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
-    var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
-    if (user != null)
+    return Results.Forbid();
+});
+
+app.MapPost("/api/guestLogin", async (HttpContext context) =>
+{
+    try
     {
-        var authProperties = new AuthenticationProperties
-        { 
-            IsPersistent = true, 
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
-        };
-            
-            await context.SignInAsync(
-                "CookieAuth",  
-                new ClaimsPrincipal(new ClaimsIdentity(
-                    new[] {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email), 
-                        new Claim("IsAdmin", user.IsAdmin.ToString()), 
-                        new Claim("CsRep", user.CsRep.ToString()) ,
-                    },
-                    "CookieAuth")),
-                authProperties
-            );
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        var loginData = JsonSerializer.Deserialize<LoginRequest>(body);
+
+        if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
+        {
+            return Results.BadRequest(new { message = "Email and chat are required" });
+        }
+
+        string decodedEmail = Uri.UnescapeDataString(loginData.Email);
+        Console.WriteLine($"Guest login attempt - Email: {decodedEmail}, ChatId: {loginData.ChatId}");
+        
+        var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
+        if (user != null)
+        {
+            // Sätt alla nödvändiga sessionsvariabler
             context.Session.SetString("UserId", user.Id.ToString());
             context.Session.SetString("UserEmail", user.Email);
-            context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
-            context.Session.SetString("CsRep", user.CsRep.ToString());
-            context.Session.SetString("CompanyName", user.CompanyName);
-            context.Session.SetInt32("ChatId", user.ChatId);
+            context.Session.SetString("IsAdmin", "false");  // Gäster är aldrig admins
+            context.Session.SetString("CsRep", "false");    // Gäster är aldrig kundtjänst
+            context.Session.SetString("CompanyName", user.CompanyName);  // Viktigt!
+            context.Session.SetInt32("ChatId", user.ChatId);            // Viktigt!
 
-            
-            
-            // Retunerar inloggningsdata
+            Console.WriteLine($"Guest login successful - Setting session data:");
+            Console.WriteLine($"Email: {user.Email}");
+            Console.WriteLine($"CompanyName: {user.CompanyName}");
+            Console.WriteLine($"ChatId: {user.ChatId}");
+
             return Results.Ok(new { 
-                token = "test-token",
                 user = new {
                     id = user.Id,
                     email = user.Email,
-                    company = user.Company,
                     companyName = user.CompanyName,
-                    csRep = user.CsRep,
-                    isAdmin = user.IsAdmin,
-                    chatId = user.ChatId
+                    chatId = user.ChatId,
+                    csRep = false,
+                    isAdmin = false
                 }
-            }); 
-    }
-    return Results.Unauthorized(); 
+            });
+        }
+
+        Console.WriteLine("Guest login failed - User not found or invalid");
+        return Results.Unauthorized();
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error: {ex}");
+        Console.WriteLine($"Guest login error: {ex}");
         return Results.BadRequest(new { message = "An error occurred during login." });
     }
 });
@@ -429,6 +431,20 @@ app.MapPost("/api/reset-password", async (HttpContext context) =>
     {
         Console.WriteLine($"Error: {ex}");
         return Results.BadRequest(new { message = "An error occurred during password reset." });
+    }
+});
+
+app.MapGet("/api/companies", async (HttpContext context) => {
+    try 
+    {
+        var companies = await queries.GetCompanies();
+        Console.WriteLine($"Fetched {companies.Count} companies");
+        return Results.Json(companies);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error fetching companies: {ex}");
+        return Results.StatusCode(500);
     }
 });
 

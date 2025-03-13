@@ -26,25 +26,35 @@ public class Queries
 
         if (!user.CsRep)
         {
-            // Check if customer has any messages in chat, if not kick them out  
-
+            // Check if customer has any messages in chat
             const string OriginalSender = @"SELECT count(chatid) 
                 FROM messages
                 JOIN users ON messages.sender = users.id
                 JOIN public.companies c on c.id = messages.company
                 WHERE chatid = @chatid AND c.name = @company AND email = @email";
+            
+            Console.WriteLine("Executing SQL query:");
+            Console.WriteLine(OriginalSender);
+            Console.WriteLine($"Parameters: chatid={user.ChatId}, company={user.CompanyName}, email={user.Email}");
+            
             await using (var cmd = _db.CreateCommand(OriginalSender))
             {
                 cmd.Parameters.AddWithValue("@chatid", user.ChatId);
                 cmd.Parameters.AddWithValue("@company", user.CompanyName);
                 cmd.Parameters.AddWithValue("@email", user.Email);
+                
+                Console.WriteLine($"Checking access for: ChatId={user.ChatId}, Company={user.CompanyName}, Email={user.Email}");
+                
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
                     {
-                        if (1 < reader.GetInt32(0))
+                        var count = reader.GetInt32(0);
+                        Console.WriteLine($"Message count: {count}");
+                        
+                        if (count == 0)
                         {
-                            return "no access";
+                            return JsonSerializer.Serialize(new { error = "no access" });
                         }
                     }
                 }
@@ -91,6 +101,7 @@ public class Queries
             JOIN companies ON messages.company = companies.id
             WHERE companies.name = @company
             ORDER BY chatid, timestamp DESC";
+        
         
         
         
@@ -611,18 +622,61 @@ public class Queries
     
         return token;
     }
-}    
-    
-    
-    
 
-    public class User
+    public async Task<List<Company>> GetCompanies()
     {
-        public int Id { get; set; }
-        public string Email { get; set; }
-        public int Company { get; set; }
-        public string CompanyName { get; set; }
-        public bool CsRep { get; set; }
-        public bool IsAdmin { get; set; }
-        public int ChatId { get; set; }
+        try
+        {
+            var companies = new List<Company>();
+            const string sql = @"SELECT id, name 
+                                FROM public.companies 
+                                ORDER BY name";
+            
+            Console.WriteLine("Starting GetCompanies query...");
+            Console.WriteLine($"SQL Query: {sql}");
+            
+            await using (var cmd = _db.CreateCommand(sql))
+            {
+                Console.WriteLine("Executing database command...");
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var company = new Company
+                        {
+                            Id = reader.GetInt32(0),
+                            Name = reader.GetString(1)
+                        };
+                        companies.Add(company);
+                        Console.WriteLine($"Found company: {company.Name} (ID: {company.Id})");
+                    }
+                }
+            }
+            
+            Console.WriteLine($"GetCompanies completed. Found {companies.Count} companies.");
+            return companies;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetCompanies: {ex}");
+            throw;
+        }
     }
+}
+
+public class User
+{
+    public int Id { get; set; }
+    public string Email { get; set; }
+    public int Company { get; set; }
+    public string CompanyName { get; set; }
+    public bool CsRep { get; set; }
+    public bool IsAdmin { get; set; }
+    public int ChatId { get; set; }
+}
+
+public class Company
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}

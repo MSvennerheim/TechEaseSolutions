@@ -1,92 +1,130 @@
-import React, { useEffect, useState } from "react";
-import { userInformation } from "../Components/Form.jsx";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import '../styles/KontaktaOss.css';
 
-function Home() {
-  const { companyName } = useParams();
-  const [data, setData] = useState([]);
-  
+const KontaktaOss = () => {
+  const { company: preselectedCompany } = useParams();
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [company, setCompany] = useState(preselectedCompany || '');
+  const [companies, setCompanies] = useState([]);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Hämta företagslistan
   useEffect(() => {
-    const getCompanyCaseTypes = async () => {
+    const fetchCompanies = async () => {
       try {
-        const response = await fetch(`/api/kontaktaoss/${companyName}`);
-        if (!response.ok) throw new Error("Failed to fetch case types");
-        const responseData = await response.json()
-        // console.log(responseData)
-        setData(responseData)
-        // Console.log(data)
-
-      } catch (error) {
-        console.error("An error has occured:", error);
+        console.log('Fetching companies...');  // Debug-loggning
+        const response = await fetch('/api/companies');
+        console.log('Response status:', response.status);  // Debug-loggning
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Received companies:', data);  // Debug-loggning
+        setCompanies(data);
+      } catch (err) {
+        console.error('Failed to fetch companies:', err);
+        setError('Kunde inte ladda företagslistan');
       }
     };
-      getCompanyCaseTypes();
+
+    fetchCompanies();
   }, []);
 
-  const {
-    email,
-    setEmail,
-    selectedOption,
-    setOption,
-    description,
-    setDescription,
-    error,
-    submitTicket,
-  } = userInformation();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/kontaktaoss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, message, company })
+      });
+
+      if (!response.ok) throw new Error('Något gick fel');
+      
+      setSuccess(true);
+      setEmail('');
+      setMessage('');
+    } catch (err) {
+      setError('Kunde inte skicka meddelandet. Försök igen senare.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-      <>
-        <div id="formwrap">
-          <form className="ticketForm" onSubmit={submitTicket}>
-            <div id="dropdown">
-              <label htmlFor="options">Välj ett ämne</label>
+    <div className="kontakt-container">
+      <div className="kontakt-card">
+        <div className="kontakt-header">
+          <h1>Kontakta oss</h1>
+          <p>Beskriv ditt ärende så återkommer vi så snart som möjligt</p>
+        </div>
+
+        {success ? (
+          <div className="success-message">
+            <h2>Tack för ditt meddelande!</h2>
+            <p>Vi har skickat en bekräftelse till din e-post. Vi återkommer så snart vi kan.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="kontakt-form">
+            {error && <div className="error-message">{error}</div>}
+            
+            <div className="input-group">
+              <label htmlFor="company">Företag</label>
               <select
-                  id="options"
-                  value={selectedOption}
-                  onChange={(e) => setOption(e.target.value)}
-                  required
+                id="company"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                required
               >
-                <option value="">--Välj ett ämne--</option>
-                {data.length > 0 ? (
-                    data.map((caseType, index) => (
-                        <option key={index} value={caseType.caseId} onChange={(e) => setOption(e.target.value)}>
-                          {caseType.caseType}
-                        </option>
-                    ))
-                ) : (
-                    <option disabled>Laddar...</option>
-                )}
+                <option value="">Välj företag</option>
+                {companies.map(comp => (
+                  <option key={comp.id} value={comp.name}>
+                    {comp.name}
+                  </option>
+                ))}
               </select>
             </div>
-            <div id="wrapmail">
-              <div className="email">
-                <input
-                    id="email"
-                    value={email}
-                    placeholder="Enter your Email..."
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-              </div>
-              <div className="description">
-                <textarea
-                    className="DescriptionField"
-                    name="issue"
-                    value={description}
-                    placeholder="Describe your issue..."
-                    onChange={(e) => setDescription(e.target.value)}
-                    required
-                />
-              </div>
-              <button id="skicka_ärende" type="submit">
-                Skicka ärende
-              </button>
+
+            <div className="input-group">
+              <label htmlFor="email">Din e-postadress</label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="namn@exempel.se"
+                required
+              />
             </div>
 
-          </form>
-        </div>
-      </>
-  );
-}
+            <div className="input-group">
+              <label htmlFor="message">Beskriv ditt ärende</label>
+              <textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Beskriv ditt problem här..."
+                rows="4"
+                required
+              />
+            </div>
 
-export default Home;
+            <button type="submit" disabled={loading}>
+              {loading ? 'Skickar...' : 'Skicka meddelande'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default KontaktaOss;
