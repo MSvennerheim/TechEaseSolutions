@@ -12,7 +12,6 @@ function Redigeramedarbetare() {
     const [updateTicker, setUpdateTicker] = useState(0)
 
     const fetchCoWorkers = async () => {
-        console.log("useEffect is called.")
         try {
             const response = await fetch(`/api/GetCoWorker`);
             if (!response.ok) throw new Error("Failed to fetch Employees");

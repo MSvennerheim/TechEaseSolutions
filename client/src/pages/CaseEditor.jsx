@@ -7,12 +7,14 @@ function CaseEditor() {
     const [newTopic, setNewTopic] = useState("");
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-    
+    const [updateTicker, setUpdateTicker] = useState(0)
+
+
+
 
     // 🟢 Hämta casetypes från backend
     useEffect(() => {
         setLoading(true);
-
         fetch(`api/casetypes`) 
             .then(response => response.json())
             .then(data => setTopics(data))
@@ -20,161 +22,76 @@ function CaseEditor() {
                 console.error("❌ Fel vid hämtning av casetypes:", error);
                 setError("Kunde inte hämta casetypes. Kontrollera backend.");
             })
-            
             .finally(() => setLoading(false));
-    }, []);
+    }, [updateTicker]);
 
     // 🟢 Lägg till ett nytt ämne i UI (ej i databasen än)
-    const handleAddTopic = () => {
-        const trimmedTopic = newTopic.trim();
-        if (trimmedTopic === "") return; // Förhindra tomma ämnen
-        
-        // Kontrollera om ämnet redan finns (case-insensitive)
-        const topicExists = topics.some(t => 
-            t.text.trim().toLowerCase() === trimmedTopic.toLowerCase()
-        );
-        
-        if (topicExists) {
-            setError("Detta ämne finns redan!");
-            return;
-        }
-        
-        setTopics([...topics, { id: null, text: trimmedTopic, company: parseInt(companyId) }]);
-        setNewTopic("");
-        setError(null); // Rensa eventuella tidigare fel
-    };
-
-    // 🟢 Spara alla ändringar (uppdateringar + nya)
-    const handleSave = async () => {
-        const newTopics = topics.filter(t => t.id === null);
-        const existingTopics = topics.filter(t => t.id !== null);
-
-        try {
-            // 🟢 Skicka PUT för uppdateringar
-            if (existingTopics.length > 0) {
-                const updateResponse = await fetch("/api/casetypes", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(existingTopics),
-                });
-                
-                if (!updateResponse.ok) {
-                    throw new Error('Fel vid uppdatering av befintliga ämnen');
-                }
-                
-                const updatedData = await updateResponse.json();
-                console.log("✅ Uppdaterade ämnen:", updatedData);
-            }
-
-            // 🆕 Skicka POST för nya ämnen och uppdatera UI
-            const updatedTopics = [...existingTopics];
-            
-            for (const topic of newTopics) {
-                const requestData = {
-                    text: topic.text.trim(),
-                    company: parseInt(topic.company)
-                };
-                
-                console.log("🔍 Försöker skicka data:", JSON.stringify(requestData, null, 2));
-                
-                try {
-                    const response = await fetch("/api/casetypes", {
-                        method: "POST",
-                        headers: { 
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(requestData),
-                    });
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error("❌ Server svarade med:", response.status, errorText);
-                        throw new Error(`Fel vid tillägg av nytt ämne: ${errorText}`);
-                    }
-
-                    const newData = await response.json();
-                    console.log("✅ Nytt ämne tillagt:", newData);
-                    
-                    // Uppdatera topics-listan med det nya ID:t från servern
-                    updatedTopics.push({
-                        ...topic,
-                        id: newData.id
-                    });
-                } catch (error) {
-                    console.error("❌ Fel vid anrop:", error);
-                    throw error;
-                }
-            }
-
-            // Uppdatera hela topics-listan med de nya ID:na
-            setTopics(updatedTopics);
-            alert("Ämnen uppdaterade!");
-        } catch (error) {
-            console.error("❌ Fel vid sparande:", error);
-            setError(error.message);
-        }
+    const handleAddTopic = async () => {
+        console.log(newTopic);
+        if (newTopic != "") {                
+            const response = await fetch("/api/NewCaseType", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                caseType: newTopic
+            }),
+                })
+            ;}
+        updateSite();
     };
 
     //  Ta bort ett ämne
-        const handleDeleteTopic = async (id) => {
-            if (!id) {
-                setTopics(topics.filter(t => t.id !== null)); // Ta bort lokala, ej sparade topics
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/casetypes/${id}`, {
-                 method: "DELETE",
-                });
-
-                if (!response.ok) {
-                    throw new Error("Misslyckades med att ta bort ämnet.");
-                }
-
-                setTopics(topics.filter(t => t.id !== id));
-                alert("Ämnet har tagits bort!");
-            } catch (error) {
-                console.error("❌ Fel vid borttagning:", error);
-                alert("❌ Kunde inte ta bort ämnet.");
-            }
+        const handleDeleteTopic = async (caseId) => {
+            
+            const response = await fetch("/api/deleteCaseType", { // No ID in the URL
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ caseId }), // Send ID as JSON
+            });
+            updateSite();
         };
+
+    const updateSite = () => {
+        setTimeout(() => {
+            setUpdateTicker(updateTicker + 1)
+        }, 200);
+    }
 
     return (
         <div>
-            <h2>Redigera ämnen för företag {companyId}</h2>
+            <h1>Edit Form</h1>
 
             {loading && <p>🔄 Laddar data...</p>}
             {error && <p style={{ color: "red" }}>❌ {error}</p>}
 
             <div id="modifywrapper">
-                <textarea 
-                    value={newTopic} 
-                    onChange={(e) => setNewTopic(e.target.value)}
-                    placeholder="Skriv ett nytt ämne..."
-                    name="newTopic"
-                />
-                <button onClick={handleAddTopic}>Lägg till</button>
+                <div className="addNewTopic">                
+                    <input
+                        value={newTopic}
+                        onChange={(e) => setNewTopic(e.target.value)}
+                        placeholder="Skriv ett nytt ämne..."
+                        className="topic"
+                    />
+                    <button onClick={handleAddTopic} className="newTopicButton">Lägg till</button>
+                </div>
 
-                <ul>
+
+
                     {topics.map((t, index) => (
-                        <li key={index}>
-                            <input 
-                                name="topics"
-                                type="text" 
-                                value={t.text} 
-                                onChange={(e) => {
-                                    const newTopics = [...topics];
-                                    newTopics[index].text = e.target.value;
-                                    setTopics(newTopics);
-                                }} 
-                            />
-                            <button onClick={() => handleDeleteTopic(t.id)}>🗑 Ta bort</button>
-                        </li>
+                        <div key={index} id="caseTypeLayout">
+                            <p value={t.caseType} className="caseTypeText"> {t.caseType ?? "N/A"}</p>
+                            <button onClick={() => {
+                                handleDeleteTopic(t.caseId);
+                            }} id="delete-button">🗑Ta bort
+                            </button>
+                        </div>
                     ))}
-                </ul>
 
-                <button onClick={handleSave}>Spara i databasen</button>
-            </div> 
+            </div>
         </div>
     );
 }

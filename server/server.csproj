@@ -20,6 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Classes\" />
+    <Compile Remove="CaseTypesController.cs" />
   </ItemGroup>
 </Project>

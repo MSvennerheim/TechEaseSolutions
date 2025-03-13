@@ -5,11 +5,11 @@ using server.Properties;
 using System.Text.Json;
 
 
-
 Database database = new();
 var db = database.Connection();
 Queries queries = new(db);
 Mail newmail = new Mail();
+CaseTypeUpdate caseTypeUpdate = new();
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -59,6 +59,16 @@ app.MapGet("/api/kontaktaoss/{company}", async (string company) =>
     return companyDetails;
 });
 
+
+
+app.MapGet("/api/IsUserCsRep", async (HttpContext context) =>
+{
+    // this shit does what it supposed to, I hate it but I just want to get the chat done
+    // 2hrs wasted because I used MapPost instead of MapGet...
+    var csRep = context.Session.GetString("CsRep");
+    return JsonSerializer.Serialize(csRep, new JsonSerializerOptions { WriteIndented = true });
+});
+
 app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
 {
     
@@ -73,22 +83,60 @@ app.MapGet("/api/Chat/{chatId:int}", async (int chatId, HttpContext context) =>
         ChatId = Convert.ToInt32(context.Session.GetInt32("ChatId"))
     };
 
-    //Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId);
+    Console.WriteLine("chatID: "+ chatId + " user.ChatID: "+ user.ChatId + " user.CsRep: " + user.CsRep);
     if (chatId == user.ChatId && !user.CsRep)
     {
-        var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return await queries.GetChatHistory(user);
     } 
     if (user.CsRep)
     {
         user.ChatId = chatId;
-        var chatHistory = await queries.GetChatHistory(user);
-        return chatHistory;
+        return await queries.GetChatHistory(user);
     } 
     
     return "no chat found";
 
 });
+
+app.MapPost("/api/assignticket", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var assignChat = JsonSerializer.Deserialize<User>(body);
+
+    // using Users ID here cause why not
+    
+    assignChat.Id = Convert.ToInt32(context.Session.GetString("UserId"));
+    assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+
+    if (assignChat.CsRep)
+    {
+        await queries.assignChatToCsRep(assignChat);
+    }
+    
+});
+
+app.MapGet("/api/assignNextTicket", async (HttpContext context) =>
+{
+    User assignChat = new User();
+    assignChat.Id = Convert.ToInt32(context.Session.GetString("UserId"));
+    assignChat.CsRep = Convert.ToBoolean(context.Session.GetString("CsRep"));
+    assignChat.CompanyName = context.Session.GetString("CompanyName");
+    
+    if (assignChat.CsRep)
+    {
+        var chatId = await queries.GetChatsForCsRep(assignChat.CompanyName, false, true);
+        if(chatId != "")
+        {
+            assignChat.ChatId = Convert.ToInt32(chatId);
+            await queries.assignChatToCsRep(assignChat);
+            return JsonSerializer.Serialize(chatId, new JsonSerializerOptions { WriteIndented = true });
+        }
+        return JsonSerializer.Serialize(chatId, new JsonSerializerOptions { WriteIndented = true });
+    }
+    return "";
+});
+
 
 app.MapPost("/api/ChatResponse/{chatId}", async (HttpContext context) =>
 {
@@ -137,7 +185,7 @@ app.MapPost("/api/arbetarsida/", async (HttpContext context) =>
     
     if (csRep)
     {
-        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats);
+        var chats = await queries.GetChatsForCsRep(company, sortingObject.getAllChats, false);
         return chats;
     }
     return "no access";
@@ -151,59 +199,58 @@ app.MapPost("/api/guestLogin", async (HttpContext context) =>
 
     try
     {
-        
-    if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
-    {
-        return Results.BadRequest(new { message = "Email and chat are required" });
-    }
+        if (loginData == null || string.IsNullOrEmpty(loginData.Email) || loginData.ChatId is null)
+        {
+            return Results.BadRequest(new { message = "Email and chat are required" });
+        }
 
-    string decodedEmail = Uri.UnescapeDataString(loginData.Email);
-    Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
-    var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
-    if (user != null)
-    {
-        var authProperties = new AuthenticationProperties
-        { 
-            IsPersistent = true, 
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
-        };
-            
-            await context.SignInAsync(
-                "CookieAuth",  
-                new ClaimsPrincipal(new ClaimsIdentity(
-                    new[] {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email), 
-                        new Claim("IsAdmin", user.IsAdmin.ToString()), 
-                        new Claim("CsRep", user.CsRep.ToString()) ,
-                    },
-                    "CookieAuth")),
-                authProperties
-            );
-            context.Session.SetString("UserId", user.Id.ToString());
-            context.Session.SetString("UserEmail", user.Email);
-            context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
-            context.Session.SetString("CsRep", user.CsRep.ToString());
-            context.Session.SetString("CompanyName", user.CompanyName);
-            context.Session.SetInt32("ChatId", user.ChatId);
+        string decodedEmail = Uri.UnescapeDataString(loginData.Email);
+        Console.WriteLine("email: " + decodedEmail + " chatid: " + loginData.ChatId);
+        var user = await queries.ValidateTempUser(decodedEmail, Convert.ToInt32(loginData.ChatId));
+        if (user != null)
+        {
+            var authProperties = new AuthenticationProperties
+            { 
+                IsPersistent = true, 
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) 
+            };
+                
+                await context.SignInAsync(
+                    "CookieAuth",  
+                    new ClaimsPrincipal(new ClaimsIdentity(
+                        new[] {
+                            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                            new Claim(ClaimTypes.Email, user.Email), 
+                            new Claim("IsAdmin", user.IsAdmin.ToString()), 
+                            new Claim("CsRep", user.CsRep.ToString()) ,
+                        },
+                        "CookieAuth")),
+                    authProperties
+                );
+                context.Session.SetString("UserId", user.Id.ToString());
+                context.Session.SetString("UserEmail", user.Email);
+                context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
+                context.Session.SetString("CsRep", user.CsRep.ToString());
+                context.Session.SetString("CompanyName", user.CompanyName);
+                context.Session.SetInt32("ChatId", user.ChatId);
 
-            
-            
-            // Retunerar inloggningsdata
-            return Results.Ok(new { 
-                token = "test-token",
-                user = new {
-                    id = user.Id,
-                    email = user.Email,
-                    company = user.Company,
-                    companyName = user.CompanyName,
-                    csRep = user.CsRep,
-                    isAdmin = user.IsAdmin,
-                    chatId = user.ChatId
-                }
-            }); 
-    }
-    return Results.Unauthorized(); 
+                
+                
+                // Retunerar inloggningsdata
+                return Results.Ok(new { 
+                    token = "test-token",
+                    user = new {
+                        id = user.Id,
+                        email = user.Email,
+                        company = user.Company,
+                        companyName = user.CompanyName,
+                        csRep = user.CsRep,
+                        isAdmin = user.IsAdmin,
+                        chatId = user.ChatId
+                    }
+                }); 
+        }
+        return Results.Unauthorized(); 
     }
     catch (Exception ex)
     {
@@ -247,7 +294,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
                 new ClaimsPrincipal(new ClaimsIdentity(
                     new[] {
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),  //sparar användarens Id
-                        new Claim(ClaimTypes.Email, user.Email), // sparar användarens  e-post 
+                        new Claim(ClaimTypes.Email, user.Email), // sparar användarens e-post 
                         new Claim("IsAdmin", user.IsAdmin.ToString()), // sparar om användaren är admin eller inte
                         new Claim("CsRep", user.CsRep.ToString()) // sparar om användaren är admin eller inte
 
@@ -262,8 +309,6 @@ app.MapPost("/api/login", async (HttpContext context) =>
             context.Session.SetString("IsAdmin", user.IsAdmin.ToString());
             context.Session.SetString("CsRep", user.CsRep.ToString());
             context.Session.SetString("CompanyName", user.CompanyName);
-
-            
             
             // Retunerar inloggningsdata
             return Results.Ok(new { 
@@ -333,7 +378,7 @@ app.MapPost("/api/form", async (HttpContext context) =>
             await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
             //Creates a new confirmation mail that gets sent to the user in question.
-            // newmail.generateNewIssue(ticketInformation);
+            newmail.generateNewIssue(ticketInformation);
             
             return Results.Ok();
         }
@@ -399,6 +444,34 @@ app.MapPost("api/deleteCsRep", async (HttpContext context) =>
 
 });
 
+app.MapGet("/api/casetypes", async (HttpContext context) =>
+{
+    var company = context.Session.GetString("CompanyName");
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    Console.WriteLine("Company name:" + company + "isAdmin: " + isAdmin);
+    
+    if (isAdmin)
+    {
+        var casetypes = await queries.GetCaseTypes(company);
+        Console.WriteLine(casetypes);
+        return casetypes;
+    }
+    
+    return null;
+});
+
+app.MapPost("/api/NewCaseType", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var caseType = JsonSerializer.Deserialize<CaseTypeUpdate>(body);
+    
+    Console.WriteLine("hit kommer du");
+    caseType.Company = context.Session.GetInt32("company");
+    
+    queries.postNewCasetype(caseType);
+});
+
 
 // Reset password api
 app.MapPost("/api/reset-password", async (HttpContext context) =>
@@ -430,6 +503,21 @@ app.MapPost("/api/reset-password", async (HttpContext context) =>
         Console.WriteLine($"Error: {ex}");
         return Results.BadRequest(new { message = "An error occurred during password reset." });
     }
+});
+
+app.MapDelete("/api/deleteCaseType", async (HttpContext context) =>
+{
+    var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+    var data = JsonSerializer.Deserialize<CaseTypeDelete>(requestBody);
+    
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    if (isAdmin)
+    {
+        await queries.removeCasetype(data.caseId);
+        Console.WriteLine("Case type deleted successfully.");
+    }
+    
+    
 });
 
 app.Run();
@@ -468,8 +556,19 @@ public class PasswordResetRequest
     public string newPassword { get; set; }
 }
 
+public class CaseTypeUpdate
+{
+    public string caseType { get; set; }
+    public int? Company { get; set; }  // 🆕 Se till att Company är med!
+}
+
 
 public class ChatSortingObject
 {
     public bool getAllChats { get; set; }
+}
+
+public class CaseTypeDelete
+{
+    public int caseId { get; set; }
 }

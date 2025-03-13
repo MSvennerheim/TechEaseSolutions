@@ -1,19 +1,7 @@
 ﻿import {useEffect, useState} from "react";
 import {useParams} from "react-router-dom";
+import { useNavigate } from 'react-router-dom';  // Import useNavigate
 
-
-/*
-const ChatHistory = () => {
-  const { chatId } = useParams()
-  const [data, setData] = useState([])
-  useEffect(() => {
-    const GetChat = async () => {
-      const response = await fetch(`http://localhost:5000/Chat/${chatId}`)
-      const responseData = await response.json()
-      setData(responseData)
-      //console.log(responseData)
-    }
-    */
 
 export function userInformation() {
     const [email, setEmail] = useState('');
@@ -26,18 +14,12 @@ export function userInformation() {
         setError('');
 
         if (!email || !selectedOption || !description) {
-            alert('Email, Description and option is required');
-            return;
+            alert('Email, Description, and option are required');
+            return false;  // Return false if validation fails
         }
 
         try {
-            console.log({
-                email,
-                option: selectedOption,
-                description
-            });
-            
-            const response = await fetch('/api/form', { 
+            const response = await fetch('/api/form', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -49,9 +31,15 @@ export function userInformation() {
                 }),
             });
             const data = await response.json();
-            // console.log(data);
+                console.log("data: " + data)
+            if (data.ok) {
+                return true;  // Return true if submission is successful
+            } else {
+                throw new Error("Failed to submit the ticket");
+            }
         } catch (error) {
-            setError("noob jävel")
+            setError("Something went wrong, please try again.");
+            return false;  // Return false if an error occurs
         }
     };
 
