@@ -7,21 +7,28 @@ using System.IO;
 
 public class Mail
 {
-    public async Task generateNewIssue(Ticket ticketinformation, string template)
+    public async Task generateNewIssue(Ticket ticketinformation, EmailTemplate template)
     {
         MimeMessage mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
         mimeMessage.To.Add(MailboxAddress.Parse(ticketinformation.email));
         mimeMessage.Subject = "Tack för att du skickat in ditt ärende till TechEaseSolution";
         string encodedEmail = Uri.EscapeDataString(ticketinformation.email);
-        // använd template som en parameter 
-        template = template ?? "";
 
         var bodyBuilder = new BodyBuilder();
-        bodyBuilder.HtmlBody = template
-            .Replace("{chatid}", ticketinformation.chatid.ToString())
-            .Replace("{description}", ticketinformation.description)
-            .Replace("{encodedEmail}", encodedEmail);
+
+
+        bodyBuilder.HtmlBody = "<html> <body>" +
+                               $"<h2>{template.title}</h2> </br>" +
+                               $"<p>{template.greeting} + {ticketinformation.chatid}</p> </br>" +
+                               $"<p>{ticketinformation.description}</p> </br>" +
+                               $"<p>{template.content}</p> </br>" +
+                               $"<p>Du kan följa ditt ärende <a href='http://localhost:5173/guestlogin/{ticketinformation.chatid}?email={encodedEmail}'>HÄR</a>.</p>" +
+                               $"<p>{template.signature}</p>" +
+                               "<p>Svara inte på detta mejlet, det är autogenererat</p></br>" +
+                               "</body> </html>";
+                                   
+                               
 
         string imagePath = "TecheaseSolutionslogo.png";
         if (File.Exists(imagePath))

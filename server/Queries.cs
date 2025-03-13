@@ -526,30 +526,59 @@ public class Queries
         }
     }
 
-    
-    
-    // hämtar epost mallen från databasen
-    public async Task<string> GetEmailTemplate(int company)
+
+
+    public async Task<EmailTemplate?> GetEmailTemplate(int company)
     {
-        const string sql = "SELECT template FROM email_templates WHERE company = @company";
-        await using (var cmd = _db.CreateCommand(sql))
-        {
-            cmd.Parameters.AddWithValue("@companyId", company);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+        // gets template for email, and if none exsists inserts new default template into db
+
+        const string checkTemplate = @"SELECT title, greeting, content, signature FROM email_templates WHERE company = @company";
+        const string createTemplate = @"INSERT INTO email_templates (company, title, greeting, content, signature) VALUES (@company, @title, @greeting, @content, @signature)";
+
+        EmailTemplate template = new EmailTemplate(); 
+            
+            await using (var cmd = _db.CreateCommand(checkTemplate))
             {
-                return reader.GetString(0);
+                cmd.Parameters.AddWithValue("@companyId", company);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    template.title = reader.GetString(reader.GetOrdinal("title"));
+                    template.greeting = reader.GetString(reader.GetOrdinal("greeting"));
+                    template.content = reader.GetString(reader.GetOrdinal("content"));
+                    template.signature = reader.GetString(reader.GetOrdinal("signature"));
+                    return template;
+                }
             }
-            return "no template found";
-        }
+
+            template.title = "Titel visas här";
+            template.greeting = "Hälsning visas här";
+            template.content = "Huvudtext visas här";
+            template.signature = "Signatur visas här";
+            
+            await using (var cmd = _db.CreateCommand(createTemplate))
+            {
+                cmd.Parameters.AddWithValue("@company", company);
+                cmd.Parameters.AddWithValue("@title", template.title);
+                cmd.Parameters.AddWithValue("@greeting", template.greeting);
+                cmd.Parameters.AddWithValue("@content", template.content);
+                cmd.Parameters.AddWithValue("@signature", template.signature);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        return template;
     }
 
     //uppdaterar epost mallen i databasen
-    public async Task<bool> UpdateEmailTemplate(string template, int company)
+    public async Task<bool> UpdateEmailTemplate(EmailTemplate template, int company)
     {
-        const string sql = "UPDATE email_templates SET template = @template WHERE company = @company";
+        const string sql = @"UPDATE email_templates 
+                            SET title = @template, greeting = @greeting, content = @content, signature = @signature 
+                            WHERE company = @company";
         await using var cmd = _db.CreateCommand(sql);
-        cmd.Parameters.AddWithValue("@template", template);
+        cmd.Parameters.AddWithValue("@title", template.title);
+        cmd.Parameters.AddWithValue("@greeting", template.greeting);
+        cmd.Parameters.AddWithValue("@content", template.content);
+        cmd.Parameters.AddWithValue("@signature", template.signature);
         cmd.Parameters.AddWithValue("@company", company);
         int rowsAffected = await cmd.ExecuteNonQueryAsync();
         return rowsAffected > 0;

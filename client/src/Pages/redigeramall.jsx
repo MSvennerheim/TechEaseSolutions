@@ -15,9 +15,9 @@ const EmailTemplateEditor = () => {
   // här hämtar e-postmallen från api
   const fetchTemplate = async () => {
     try {
-      const response = await fetch('/api/email-template');
+      const response = await fetch('/api/get-email-template');
       const data = await response.json();
-      parseTemplate(data.template); // Extraherar och sätter in innehållet i formuläret
+      parseTemplate(data); // Extraherar och sätter in innehållet i formuläret
     } catch (error) {
       console.error('Error fetching the email template:', error);
     } finally {
@@ -25,9 +25,15 @@ const EmailTemplateEditor = () => {
     }
   };
     // extraherar innehållet från HTML-mallen och sätter tillstånd
-  const parseTemplate = (htmlTemplate) => {
+  const parseTemplate = (data) => {
+    setTitle(data.title)
+    setGreeting(data.greeting)
+    setMainContent(data.content)
+    setSignature(data.signature)
+    
+    /*
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlTemplate; // skapar ett tillfälligt DOM-element för att extrahera innehåll
+    tempDiv.innerHTML = template; // skapar ett tillfälligt DOM-element för att extrahera innehåll
 
     // hämtar titeln från en rubrik alltså (h1, h2 eller h3)
     setTitle(tempDiv.querySelector('h1, h2, h3')?.textContent || '');
@@ -37,6 +43,7 @@ const EmailTemplateEditor = () => {
     setGreeting(paragraphs[0]?.textContent || '');
     setMainContent(Array.from(paragraphs).slice(1, -1).map(p => p.textContent).join('\n\n')); // detta är mitten av texten
     setSignature(paragraphs[paragraphs.length - 1]?.textContent || ''); // och detta är signaturen så man kan skriva sitt företags namn
+    */
   };
 
 
@@ -48,9 +55,9 @@ const EmailTemplateEditor = () => {
       <h2>${title}</h2>
       <p>${greeting}</p>
       ${mainContent.split('\n\n').map(para => `<p>${para}</p>`).join('\n')}
+      <p>Du kan följa ditt ärende <a href='http://localhost:5173/guestlogin/{chatid}?email={encodedEmail}'>HÄR</a>.</p>
       <p>${signature}</p> 
-      <p>Du kan följa ditt ärende <a href='http://localhost:5173/guestlogin/{chatid}?email={encodedEmail}'>HÄR</a>.</p> 
-      <p><img src='cid:image1'></p>
+      <p>Svara inte på detta mejlet, det är autogenererat</p>
     </body>
     </html>`;
 
@@ -58,6 +65,7 @@ const EmailTemplateEditor = () => {
   const handleSave = async () => {
     const templateToSave = buildTemplate();
     // detta måste finnas i mallen
+    /*
     const requiredElements = ['{chatid}', '{description}', '{encodedEmail}'];
     const missingElements = requiredElements.filter(el => !templateToSave.includes(el));
    
@@ -65,14 +73,16 @@ const EmailTemplateEditor = () => {
     if (missingElements.length > 0) {
       alert(`Följande element saknas och måste vara med: ${missingElements.join(', ')}`);
       return;
+      */
+    
     }
 
     try {
       setLoading(true);
-      const response = await fetch('/api/email-template', {
+      const response = await fetch('/api/post-email-template', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ Template: templateToSave }),
+        body: JSON.stringify({  }),
       });
 
       if (response.ok) {

@@ -360,35 +360,42 @@ app.MapGet("/api/check-session", (HttpContext context) =>
 
 
 // hämtar epost mallen från databasen med hjälp av queries 
-app.MapGet("/api/email-template", async (HttpContext context) =>
+app.MapGet("/api/get-email-template", async (HttpContext context) =>
 {
-    var template = await queries.GetEmailTemplate();
-    if (template != null)
-    {
-        return Results.Ok(new { template });
+    int companyid = Convert.ToInt32(context.Session.GetInt32("company"));
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
+    
+    if(isAdmin){
+        var template = await queries.GetEmailTemplate(companyid);
+        return JsonSerializer.Serialize(template, new JsonSerializerOptions { WriteIndented = true });
     }
-    return Results.NotFound(new { message = "Template not found" });
+    return "no access";
 });
 
 
 // tar emot post-förfrågan med en JSON-body som innehåller den nya mallen 
-app.MapPost("/api/email-template", async (HttpContext context) =>
+app.MapPost("/api/post-email-template", async (HttpContext context) =>
 {
     using var reader = new StreamReader(context.Request.Body);
     var body = await reader.ReadToEndAsync();
     var templateData = JsonSerializer.Deserialize<EmailTemplate>(body);
+    int companyid = Convert.ToInt32(context.Session.GetInt32("company"));
+    bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
 
-    if (templateData == null || string.IsNullOrEmpty(templateData.Template))
-    {
-        return Results.BadRequest(new { message = "Template is a must" });
-    }
+    if(isAdmin){
+        if (templateData == null)
+        {
+            return Results.BadRequest(new { message = "Template is a must" });
+        }
 
-    bool success = await queries.UpdateEmailTemplate(templateData.Template);
-    if (success)
-    {
-        return Results.Ok();
+        bool success = await queries.UpdateEmailTemplate(templateData, companyid);
+        if (success)
+        {
+            return Results.Ok();
+        }
+        return Results.BadRequest(new { message = "Failed to update template" });
     }
-    return Results.BadRequest(new { message = "Failed to update template" });
+    return Results.Unauthorized();
 });
 
 
@@ -419,7 +426,7 @@ app.MapPost("/api/form", async (HttpContext context) =>
             await queries.postNewTicket(ticketInformation);
 
             // Fetch the email template
-            var template = await queries.GetEmailTemplate();
+            EmailTemplate template = await queries.GetEmailTemplate(ticketInformation.companyId);
 
             // Pass the template to the generateNewIssue method
             await newmail.generateNewIssue(ticketInformation, template);
@@ -593,11 +600,6 @@ public class NewCsRepRequest
 }
 
 
-public class EmailTemplate
-{
-    public string Template { get; set; }
-}
-
 // klass för passwordreset
 public class PasswordResetRequest
 {
@@ -621,4 +623,13 @@ public class ChatSortingObject
 public class CaseTypeDelete
 {
     public int caseId { get; set; }
+}
+
+public class EmailTemplate
+{
+    public string title { get; set; }
+    public string greeting { get; set; }
+    public string content { get; set; }
+    public string signature { get; set; }
+
 }
