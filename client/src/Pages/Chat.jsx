@@ -2,6 +2,7 @@ import React, {use, useEffect, useState} from "react";
 import { useParams } from "react-router-dom";
 import { useSendChatAnswer } from "../Components/ChatAnswer.jsx";
 import {useNavigate} from "react-router";
+import '../styles/Chat.css';
 
 const ChatHistory = () => {
   const { chatId } = useParams();
@@ -65,27 +66,47 @@ const ChatHistory = () => {
   
 
   return (
-    <div>
-      <ul>
-        {data.map((chat, index) => (
-          <div key={index} className={chat.csrep === true ? 'fromCsRep' : 'fromCustomer'}>
-            <small>Avsändare: {chat.sender} </small><br />
-            <small>{chat.message}</small><br />
-            <small>Skickat: {chat.timestamp}</small>
-          </div>
-        ))}
-      </ul>
+    <div className="page-container">
+      <div className="chat-container">
+        <div className="chat-messages">
+          {data.map((chat, index) => (
+            <div key={index} className={`message ${chat.csrep ? 'my-message' : 'other-message'}`}>
+              <div className="message-content">
+                <div className="message-sender">Avsändare: {chat.sender}</div>
+                <div>{chat.message}</div>
+                <div className="message-timestamp">Skickat: {chat.timestamp}</div>
+              </div>
+            </div>
+          ))}
+        </div>
 
-      <form onSubmit={(e) => e.preventDefault()} hidden={data.length === 0} >
-        <input
-          id="message"
-          value={message}
-          placeholder="Enter your message..."
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <button type="submit" onClick={() => handleResponse(false)} disabled={message.length === 0}>Send</button>
-        <button type="submit" onClick={() => handleResponse(true)} hidden={!isUserCsRep} disabled={message.length === 0} >Send and take next open ticket</button>
-      </form>
+        <form className="chat-form" onSubmit={(e) => e.preventDefault()} hidden={data.length === 0}>
+          <input
+            className="chat-input"
+            id="message"
+            value={message}
+            placeholder="Enter your message..."
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button 
+            className="send-button"
+            type="submit" 
+            onClick={() => handleResponse(false)} 
+            disabled={message.length === 0}
+          >
+            Send
+          </button>
+          <button 
+            className="send-button"
+            type="submit" 
+            onClick={() => handleResponse(true)} 
+            hidden={!isUserCsRep} 
+            disabled={message.length === 0}
+          >
+            Send and take next open ticket
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
