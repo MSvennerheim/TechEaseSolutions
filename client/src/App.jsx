@@ -11,7 +11,7 @@ import EditForm from "./pages/CaseEditor.jsx";
 import './index.css';
 import ProtectedRoute from './Components/ProtectedRoute.jsx';
 import CustomerLogin from "./Components/CustomerLogin.jsx";
-
+import Redigeramall from "./Pages/Redigeramall.jsx";
 
 export default function App() {
   return (
@@ -22,6 +22,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/confirmation" element={<Confirmationsida />} />
         <Route path="/reset-password" element={<PasswordresetForm />} />
+        <Route path="/Redigeramall" element={<Redigeramall/>} />
         <Route path="/kontaktaoss/:companyName" element={<KontaktaOss />} />
         {/* Skyddad routes */}
         <Route path="/Arbetarsida" element={<ProtectedRoute><Arbetarsida /></ProtectedRoute>} />
