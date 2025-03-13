@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import cogwheel from '../images/cogwheel.png'
 import form from '../images/contact-form.png'
 import customerservice from '../images/customer-support.png'
+import email from '../images/email.png'
 
 function Adminsida() {
     
@@ -28,24 +29,28 @@ function Adminsida() {
       <>
         <div>
             <h1>Admin site</h1>
-                <div className="adminNavBar">
-                    <div>
-                        <Link to={`/redigeramedarbetare`}><img src={cogwheel} className="adminIcons" /></Link>
-                        <p className="adminLayoutP">Employees</p>
-                    </div>
-                    <div>
-                        <Link to={`/caseEditor`}><img src={form} className="adminIcons"/></Link>
-                        <p className="adminLayoutP">Edit form</p>
-                    </div>
-                    <div>
-                        <Link to={`/arbetarsida`}><img src={customerservice} className="adminIcons"/></Link>
-                        <p className="adminLayoutP">Issues</p>
+            <div className="adminNavBar">
+                <div>
+                    <Link to={`/redigeramedarbetare`}><img src={cogwheel} className="adminIcons"/></Link>
+                    <p className="adminLayoutP">Employees</p>
                 </div>
+                <div>
+                    <Link to={`/caseEditor`}><img src={form} className="adminIcons"/></Link>
+                    <p className="adminLayoutP">Edit form</p>
                 </div>
+                <div>
+                    <Link to={`/arbetarsida`}><img src={customerservice} className="adminIcons"/></Link>
+                    <p className="adminLayoutP">Issues</p>
+                </div>
+                <div>
+                    <Link to={`/Redigeramall`}><img src={email} className="adminIcons"/></Link>
+                    <p className="adminLayoutP">Edit email <br/>template</p>
+                </div>
+            </div>
         </div>
-    </>
+      </>
   );
-  
+
 
 }
 
