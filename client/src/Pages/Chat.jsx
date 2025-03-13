@@ -70,7 +70,7 @@ const ChatHistory = () => {
       <div className="chat-container">
         <div className="chat-messages">
           {data.map((chat, index) => (
-            <div key={index} className={`message ${chat.csrep ? 'my-message' : 'other-message'}`}>
+            <div key={index} className={`message ${isUserCsRep ? (chat.csrep ? 'my-message' : 'other-message') : (chat.csrep ? 'other-message' : 'my-message' )}`}>
               <div className="message-content">
                 <div className="message-sender">Avsändare: {chat.sender}</div>
                 <div>{chat.message}</div>
