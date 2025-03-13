@@ -529,26 +529,28 @@ public class Queries
     
     
     // hämtar epost mallen från databasen
-    public async Task<string> GetEmailTemplate()
+    public async Task<string> GetEmailTemplate(int company)
     {
-        const string sql = "SELECT template FROM email_templates WHERE id = 3";
-        await using var cmd = _db.CreateCommand(sql);
-        await using var reader = await cmd.ExecuteReaderAsync();
-
-        if (await reader.ReadAsync())
+        const string sql = "SELECT template FROM email_templates WHERE company = @company";
+        await using (var cmd = _db.CreateCommand(sql))
         {
-            return reader.GetString(0);
+            cmd.Parameters.AddWithValue("@companyId", company);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return reader.GetString(0);
+            }
+            return "no template found";
         }
-
-        return null;
     }
 
     //uppdaterar epost mallen i databasen
-    public async Task<bool> UpdateEmailTemplate(string template)
+    public async Task<bool> UpdateEmailTemplate(string template, int company)
     {
-        const string sql = "UPDATE email_templates SET template = @template WHERE id = 3";
+        const string sql = "UPDATE email_templates SET template = @template WHERE company = @company";
         await using var cmd = _db.CreateCommand(sql);
         cmd.Parameters.AddWithValue("@template", template);
+        cmd.Parameters.AddWithValue("@company", company);
         int rowsAffected = await cmd.ExecuteNonQueryAsync();
         return rowsAffected > 0;
     }
