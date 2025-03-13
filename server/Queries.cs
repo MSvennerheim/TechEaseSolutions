@@ -526,6 +526,35 @@ public class Queries
         }
     }
 
+    
+    
+    // hämtar epost mallen från databasen
+    public async Task<string> GetEmailTemplate()
+    {
+        const string sql = "SELECT template FROM email_templates WHERE id = 3";
+        await using var cmd = _db.CreateCommand(sql);
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
+        {
+            return reader.GetString(0);
+        }
+
+        return null;
+    }
+
+    //uppdaterar epost mallen i databasen
+    public async Task<bool> UpdateEmailTemplate(string template)
+    {
+        const string sql = "UPDATE email_templates SET template = @template WHERE id = 3";
+        await using var cmd = _db.CreateCommand(sql);
+        cmd.Parameters.AddWithValue("@template", template);
+        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+    
+    
+    
     public async Task RemoveCsRep(int company, string email)
     {
         

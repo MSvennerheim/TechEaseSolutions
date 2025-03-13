@@ -7,31 +7,22 @@ using System.IO;
 
 public class Mail
 {
-    public void generateNewIssue(Ticket ticketinformation)
+    public async Task generateNewIssue(Ticket ticketinformation, string template)
     {
         MimeMessage mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress("TechEeasSolution", "kundtjanstssontest@gmail.com"));
         mimeMessage.To.Add(MailboxAddress.Parse(ticketinformation.email));
         mimeMessage.Subject = "Tack för att du skickat in ditt ärende till TechEaseSolution";
         string encodedEmail = Uri.EscapeDataString(ticketinformation.email);
-
+        // använd template som en parameter 
+        template = template ?? "";
 
         var bodyBuilder = new BodyBuilder();
-        
-        bodyBuilder.HtmlBody = @$"
-        <html>
-        <body>
-            <h2>Tack för ditt ärende!</h2>
-            <p>Vi har nu tagit emot ditt ärende #{ticketinformation.chatid}.</p>
-            <p>{ticketinformation.description}</p>
-            <p> För att få tillgång till din chat går du in: <a href='http://localhost:5173/guestlogin/{ticketinformation.chatid}?email={encodedEmail}'>HÄR</a>
-            <p>Kundtjänst kommer svara så fort de kan.</p>
-            <p><img src='cid:image1'></p>
-            <p>Svara inte på detta mejlet, det är autogenererat</p>
-        </body>
-        </html>";
+        bodyBuilder.HtmlBody = template
+            .Replace("{chatid}", ticketinformation.chatid.ToString())
+            .Replace("{description}", ticketinformation.description)
+            .Replace("{encodedEmail}", encodedEmail);
 
-        
         string imagePath = "TecheaseSolutionslogo.png";
         if (File.Exists(imagePath))
         {
@@ -43,7 +34,6 @@ public class Mail
             Console.WriteLine("Image file not found: " + imagePath);
         }
 
-        // Set the email body
         mimeMessage.Body = bodyBuilder.ToMessageBody();
 
         using (SmtpClient client = new SmtpClient())

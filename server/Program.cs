@@ -357,6 +357,46 @@ app.MapGet("/api/check-session", (HttpContext context) =>
     });
 });
 
+
+
+// hämtar epost mallen från databasen med hjälp av queries 
+app.MapGet("/api/email-template", async (HttpContext context) =>
+{
+    var template = await queries.GetEmailTemplate();
+    if (template != null)
+    {
+        return Results.Ok(new { template });
+    }
+    return Results.NotFound(new { message = "Template not found" });
+});
+
+
+// tar emot post-förfrågan med en JSON-body som innehåller den nya mallen 
+app.MapPost("/api/email-template", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+    var templateData = JsonSerializer.Deserialize<EmailTemplate>(body);
+
+    if (templateData == null || string.IsNullOrEmpty(templateData.Template))
+    {
+        return Results.BadRequest(new { message = "Template is a must" });
+    }
+
+    bool success = await queries.UpdateEmailTemplate(templateData.Template);
+    if (success)
+    {
+        return Results.Ok();
+    }
+    return Results.BadRequest(new { message = "Failed to update template" });
+});
+
+
+
+
+
+
+
 app.MapPost("/api/form", async (HttpContext context) =>
 {
     try
@@ -377,9 +417,13 @@ app.MapPost("/api/form", async (HttpContext context) =>
             //Creates a temp user for a ticket.
             await queries.customerTempUser(ticketInformation);
             await queries.postNewTicket(ticketInformation);
-            //Creates a new confirmation mail that gets sent to the user in question.
-            newmail.generateNewIssue(ticketInformation);
-            
+
+            // Fetch the email template
+            var template = await queries.GetEmailTemplate();
+
+            // Pass the template to the generateNewIssue method
+            await newmail.generateNewIssue(ticketInformation, template);
+
             return Results.Ok();
         }
     }
@@ -546,6 +590,12 @@ public class NewCsRepRequest
     public string Email {get; set;}
     public string CompanyName { get; set;}
     public bool IsAdmin { get; set;}
+}
+
+
+public class EmailTemplate
+{
+    public string Template { get; set; }
 }
 
 // klass för passwordreset
