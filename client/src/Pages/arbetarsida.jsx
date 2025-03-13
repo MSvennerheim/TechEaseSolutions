@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import assignTicket from "../Components/AssignTicket.jsx";
 import {useNavigate} from "react-router";
+import "../Styles/Arbetarsida.css";
 
 const Arbetarsida = () => {
   const [data, setData] = useState([])
@@ -38,25 +39,36 @@ const Arbetarsida = () => {
 
   
   return (
-    <div>
-      <div>
-        <input type={"checkbox"} onChange={getAllChats}/> <p>Get all chats?</p>
-      </div>
-      {data.map((chats, index) => (
-        <div key={index} className={chats.csrep ? "openTicket" : "closedTicket"}> {/*Should be some kind of marker for when a ticket is closed here(grayed out?)*/}
-          <small>Case Type: {chats.casetype}</small><br/>
-          <small>Last message from: {chats.sender}</small><br/>
-          <small>{chats.message} </small><br />
-          <small>Sent: {chats.timestamp}</small><br />
-          {chats.assignedCsRep != null && (
-              <>
-              <small>User assigned to this ticket: {chats.assignedCsRep}</small><br/>
-              </>
-            )}
-          <Link to={`/Chat/${chats.chat}`}><button>Go to chat</button></Link>
-          <button onClick={() => assignTicket(chats.chat, navigate)}>Go to chat and assign ticket</button>
+    <div className="arbetarsida-container">
+      <div className="filter-section">
+        <div className="filter-checkbox">
+          <input type={"checkbox"} onChange={getAllChats}/>
+          <p>Get all chats?</p>
         </div>
-      ))}
+      </div>
+      <div className="ticket-list">
+        {data.map((chats, index) => (
+          <div key={index} className={`ticket ${chats.csrep ? "open-ticket" : "closed-ticket"}`}>
+            <div className="ticket-content">
+              <div className="ticket-body">
+                <small className="ticket-meta">Case Type: {chats.casetype}</small>
+                <small className="ticket-meta">Last message from: {chats.sender}</small>
+                <small className="ticket-message">{chats.message}</small>
+                <small className="ticket-meta">Sent: {chats.timestamp}</small>
+                {chats.assignedCsRep != null && (
+                  <small className="ticket-meta">User assigned to this ticket: {chats.assignedCsRep}</small>
+                )}
+              </div>
+              <div className="ticket-actions">
+                <Link to={`/Chat/${chats.chat}`} className="view-ticket-btn">Go to chat</Link>
+                <button onClick={() => assignTicket(chats.chat, navigate)} className="view-ticket-btn">
+                  Go to chat and assign ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>  
   )
 }
