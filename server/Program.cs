@@ -379,6 +379,7 @@ app.MapPost("/api/post-email-template", async (HttpContext context) =>
     using var reader = new StreamReader(context.Request.Body);
     var body = await reader.ReadToEndAsync();
     var templateData = JsonSerializer.Deserialize<EmailTemplate>(body);
+    Console.WriteLine("title: " + templateData.templateTitle + "greting: " + templateData.templateGreeting + "content: " + templateData.templateContent + "singature: " + templateData.templateSignature);
     int companyid = Convert.ToInt32(context.Session.GetInt32("company"));
     bool isAdmin = Convert.ToBoolean(context.Session.GetString("IsAdmin"));
 
@@ -627,9 +628,9 @@ public class CaseTypeDelete
 
 public class EmailTemplate
 {
-    public string title { get; set; }
-    public string greeting { get; set; }
-    public string content { get; set; }
-    public string signature { get; set; }
+    public string templateTitle { get; set; }
+    public string templateGreeting { get; set; }
+    public string templateContent { get; set; }
+    public string templateSignature { get; set; }
 
 }

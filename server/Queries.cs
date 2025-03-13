@@ -543,26 +543,26 @@ public class Queries
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    template.title = reader.GetString(reader.GetOrdinal("title"));
-                    template.greeting = reader.GetString(reader.GetOrdinal("greeting"));
-                    template.content = reader.GetString(reader.GetOrdinal("content"));
-                    template.signature = reader.GetString(reader.GetOrdinal("signature"));
+                    template.templateTitle = reader.GetString(reader.GetOrdinal("title"));
+                    template.templateGreeting = reader.GetString(reader.GetOrdinal("greeting"));
+                    template.templateContent = reader.GetString(reader.GetOrdinal("content"));
+                    template.templateSignature = reader.GetString(reader.GetOrdinal("signature"));
                     return template;
                 }
             }
 
-            template.title = "Titel visas här";
-            template.greeting = "Hälsning visas här";
-            template.content = "Huvudtext visas här";
-            template.signature = "Signatur visas här";
+            template.templateTitle = "Titel visas här";
+            template.templateGreeting = "Hälsning visas här, kunds ärendenr följer härefter";
+            template.templateContent = "Huvudtext visas här";
+            template.templateSignature = "Signatur visas här";
             
             await using (var cmd = _db.CreateCommand(createTemplate))
             {
                 cmd.Parameters.AddWithValue("@company", company);
-                cmd.Parameters.AddWithValue("@title", template.title);
-                cmd.Parameters.AddWithValue("@greeting", template.greeting);
-                cmd.Parameters.AddWithValue("@content", template.content);
-                cmd.Parameters.AddWithValue("@signature", template.signature);
+                cmd.Parameters.AddWithValue("@title", template.templateTitle);
+                cmd.Parameters.AddWithValue("@greeting", template.templateGreeting);
+                cmd.Parameters.AddWithValue("@content", template.templateContent);
+                cmd.Parameters.AddWithValue("@signature", template.templateSignature);
                 await cmd.ExecuteNonQueryAsync();
             }
         return template;
@@ -572,13 +572,13 @@ public class Queries
     public async Task<bool> UpdateEmailTemplate(EmailTemplate template, int company)
     {
         const string sql = @"UPDATE email_templates 
-                            SET title = @template, greeting = @greeting, content = @content, signature = @signature 
+                            SET title = @title, greeting = @greeting, content = @content, signature = @signature 
                             WHERE company = @company";
         await using var cmd = _db.CreateCommand(sql);
-        cmd.Parameters.AddWithValue("@title", template.title);
-        cmd.Parameters.AddWithValue("@greeting", template.greeting);
-        cmd.Parameters.AddWithValue("@content", template.content);
-        cmd.Parameters.AddWithValue("@signature", template.signature);
+        cmd.Parameters.AddWithValue("@title", template.templateTitle);
+        cmd.Parameters.AddWithValue("@greeting", template.templateGreeting);
+        cmd.Parameters.AddWithValue("@content", template.templateContent);
+        cmd.Parameters.AddWithValue("@signature", template.templateSignature);
         cmd.Parameters.AddWithValue("@company", company);
         int rowsAffected = await cmd.ExecuteNonQueryAsync();
         return rowsAffected > 0;

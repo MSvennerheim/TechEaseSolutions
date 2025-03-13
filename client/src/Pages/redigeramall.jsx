@@ -26,24 +26,10 @@ const EmailTemplateEditor = () => {
   };
     // extraherar innehållet från HTML-mallen och sätter tillstånd
   const parseTemplate = (data) => {
-    setTitle(data.title)
-    setGreeting(data.greeting)
-    setMainContent(data.content)
-    setSignature(data.signature)
-    
-    /*
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = template; // skapar ett tillfälligt DOM-element för att extrahera innehåll
-
-    // hämtar titeln från en rubrik alltså (h1, h2 eller h3)
-    setTitle(tempDiv.querySelector('h1, h2, h3')?.textContent || '');
-
-    //hämtar alla <p>-element 
-    const paragraphs = tempDiv.querySelectorAll('p'); //första paragrafen är en hälsning
-    setGreeting(paragraphs[0]?.textContent || '');
-    setMainContent(Array.from(paragraphs).slice(1, -1).map(p => p.textContent).join('\n\n')); // detta är mitten av texten
-    setSignature(paragraphs[paragraphs.length - 1]?.textContent || ''); // och detta är signaturen så man kan skriva sitt företags namn
-    */
+    setTitle(data.templateTitle)
+    setGreeting(data.templateGreeting)
+    setMainContent(data.templateContent)
+    setSignature(data.templateSignature)
   };
 
 
@@ -53,8 +39,9 @@ const EmailTemplateEditor = () => {
     <html>
     <body>
       <h2>${title}</h2>
-      <p>${greeting}</p>
-      ${mainContent.split('\n\n').map(para => `<p>${para}</p>`).join('\n')}
+      <p>${greeting} <b>XXXX</b></p>
+      <p>Kunds meddelande visas här</p>
+      <p>${mainContent}</p>
       <p>Du kan följa ditt ärende <a href='http://localhost:5173/guestlogin/{chatid}?email={encodedEmail}'>HÄR</a>.</p>
       <p>${signature}</p> 
       <p>Svara inte på detta mejlet, det är autogenererat</p>
@@ -62,27 +49,14 @@ const EmailTemplateEditor = () => {
     </html>`;
 
   //sparar den uppfaterade e-postmallen via api
-  const handleSave = async () => {
-    const templateToSave = buildTemplate();
-    // detta måste finnas i mallen
-    /*
-    const requiredElements = ['{chatid}', '{description}', '{encodedEmail}'];
-    const missingElements = requiredElements.filter(el => !templateToSave.includes(el));
-   
-    // om inte variablerna finns med så ska en varning dyk upp
-    if (missingElements.length > 0) {
-      alert(`Följande element saknas och måste vara med: ${missingElements.join(', ')}`);
-      return;
-      */
-    
-    }
+  const handleSave = async () => {   
 
     try {
       setLoading(true);
       const response = await fetch('/api/post-email-template', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({  }),
+        body: JSON.stringify({ templateTitle: title, templateGreeting: greeting, templateContent: mainContent, templateSignature: signature }),
       });
 
       if (response.ok) {

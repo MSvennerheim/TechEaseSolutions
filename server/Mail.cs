@@ -19,12 +19,12 @@ public class Mail
 
 
         bodyBuilder.HtmlBody = "<html> <body>" +
-                               $"<h2>{template.title}</h2> </br>" +
-                               $"<p>{template.greeting} + {ticketinformation.chatid}</p> </br>" +
+                               $"<h2>{template.templateTitle}</h2> </br>" +
+                               $"<p>{template.templateGreeting} {ticketinformation.chatid}</p> </br>" +
                                $"<p>{ticketinformation.description}</p> </br>" +
-                               $"<p>{template.content}</p> </br>" +
+                               $"<p>{template.templateContent}</p> </br>" +
                                $"<p>Du kan följa ditt ärende <a href='http://localhost:5173/guestlogin/{ticketinformation.chatid}?email={encodedEmail}'>HÄR</a>.</p>" +
-                               $"<p>{template.signature}</p>" +
+                               $"<p>{template.templateSignature}</p>" +
                                "<p>Svara inte på detta mejlet, det är autogenererat</p></br>" +
                                "</body> </html>";
                                    
