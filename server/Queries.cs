@@ -21,6 +21,7 @@ public class Queries
     {
         
         // get chat history for a specific chat using chatid
+        
         var messages = new List<object>();
 
         if (!user.CsRep)
@@ -82,6 +83,9 @@ public class Queries
 
     public async Task<string> GetChatsForCsRep(string company, bool allChats, bool getChatForAssignment)
     {
+        // Get all chats for a certain company and if they are open/closed
+        // Also gets chatId and returns this to /api/assignNextTicket if csrep presses "Send and take next open ticket" 
+        
         var chats = new List<object>();
 
         const string sql = @"
