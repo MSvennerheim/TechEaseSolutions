@@ -17,10 +17,10 @@
 
 ### Adminsida (/admin)
 - Portal med länkar till adminfunktioner:
-  1. [Redigera medarbetare](/redigeramedarbetare)
-  2. [Case Editor](/caseEditor)
-  3. [Arbetarsida](/arbetarsida)
-  4. [Redigera mall](/redigeramall)
+  1. Redigera medarbetare
+  2. Case Editor
+  3. Arbetarsida
+  4. Redigera mall
 
 ### Redigera medarbetare (/redigeramedarbetare)
 - Hämtar medarbetare för ditt företag och visar dem i en lista.
@@ -71,8 +71,3 @@
 ### Password Reset (/reset-password/{resetToken})
 - Tillåter användare att byta lösenord.
 - Efter lösenordsbyte omdirigeras användaren till `/login`.
-
----
-
-För frågor eller support, kontakta oss via [support@teacheasesolutions.com](mailto:support@teacheasesolutions.com).
-
