@@ -44,13 +44,13 @@ function Redigeramedarbetare() {
     const updateSite = () => {
         setTimeout(() => {
             setUpdateTicker(updateTicker + 1)
-        }, 500);
+        }, 200);
     }
 
-    const handleCoworkerSubmit = async (e) => {
+    const handleCoworkerSubmit = (e) => {
         e.preventDefault();
         console.log(Email)
-        const response = await fetch('/api/NewCustomerSupport', {
+        fetch('/api/NewCustomerSupport', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -59,6 +59,7 @@ function Redigeramedarbetare() {
                 Email
             }),
         });
+        newCoworkerToggle()
         updateSite()
     };
     
