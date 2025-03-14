@@ -1,97 +1,78 @@
-# Git hjälp
-Liten tutorial på hur vi kommer igång och arbetar med git.
-## Så här skapar vi ett nytt repo
-Antingen kan du göra det via Rider.
-Det går att göra det på Github, där kan du välja att lägga till ignore,readme och liscens.
-Det går att skippa det steget och då får du göra det via terminalen (bash).
-Om repot finns så måste du sedan bjuda in de som ska arbeta på repot i github.
-Sedan kan de klona repot via github och sen i terminalen eller rider klona det till din dator.
-Se till att ni sitter i den mappen ni vill repot ska connectas med.
-Kolla var du är genom commandot ls (du får nu upp en lista på filer och mappar som ligger i mappen) och gå in i den mappen du vill med kommandot cd "directory".
+# TeachEaseSolutions Anvandarguide
 
-## Så här gör vi en ny branch
-git checkout -b fancy_feature (skapar och switchar till en ny branch),
-git branch cool_feature (skapar en ny branch)
-git checkout cool_feature (byter till branch "cool_feature"),
-Glöm inte göra en first commit.
-git add Cool.cs,
-git commit -m "added cool file",
-git push, om du får error så står det vad du ska göra oftast brukar det vara -->
-git push --set-upstream origin cool_feature,
-Döp era features (branches) till feature/"namn" för att underlätta. Detta är praxis!
-Använd git status ofta för att se var du är och hur dina commits ligger till.
-git branch -a (kolla vilka branches som finns).
+## Prerequisites
+1. Skapa databasen från en dump.
+2. Skapa en `.env`-fil för databasanslutning.
+3. Skapa en admin i `users`-tabellen för ett nytt företag.
+   - Markera även `csrep` som `true`, då detta krävs för att komma åt arbetarsidan.
+   - Det finns ännu inget verktyg för att lägga till nya admins som CRM-owner.
 
-## branches i praktiken
-gör en branch för varje task.
-Testa den med main genom merge. (Merga inte den till main, merge main med branch).
-Sedan kommunicera det med gruppen och när alla är överens så mergea den till main.
+---
 
-## Gitignore
-För att göra en ignore manuellt behöver du göra en vanlig fil i repot som heter gitignore.
-Sedan gå in i benjamins dokumentation som heter gitignore på bloggen i artikeln "kom igång med git".
-Kopiera sedan in det template du behöver för ditt projekt. Vi använder C#.
+## Sidor
 
-Svåra vägen är att radera filerna med rm -Rf obj och rm -Rf bin.
-Var försiktig med detta kommandot eftersom om du använder det på hela datorn så försvinner dina system filer.
+### Logga in (/ eller /login)
+- Inloggning för företagsadmins och kundtjänstmedarbetare.
+- Redirectar dig till adminsidan om du är admin, eller arbetarsidan om du är kundtjänstmedarbetare.
 
-terminal:
-touch gitignore (gör fil),
-git add gitignore,
-git commit ....,
-git push ,
-rm -Rf obj,
-rm -Rf bin (raderar filerna lokalt),
-git push.
-Kan finnas något extra steg som behövs. Kolla i dokumentation för att vara säker.
+### Adminsida (/admin)
+- Portal med länkar till adminfunktioner:
+  1. [Redigera medarbetare](/redigeramedarbetare)
+  2. [Case Editor](/caseEditor)
+  3. [Arbetarsida](/arbetarsida)
+  4. [Redigera mall](/redigeramall)
 
-## Lägg till på olika sätt
-git add . (. = current directory),
-git add * (utan gömda filer),
-git add "filename",
-git add Mapp/. (allting i denna mappen),
-git add (hela sökvägen),
-GLÖM INTE att använda "git commit -m "meddelande"" sedan "git push"
-för att det ska läggas till i repository.
+### Redigera medarbetare (/redigeramedarbetare)
+- Hämtar medarbetare för ditt företag och visar dem i en lista.
+- Medarbetare kan läggas till och tas bort.
+- Ny medarbetare får ett mejl med en länk för att byta lösenord (`/reset-password/{resetToken}`).
+  - De kan inte logga in förrän lösenordet är ändrat.
 
-## divergent branches
-Glöm inte att läsa dina error messages!
+### Case Editor (/caseEditor)
+- Låter admins redigera ärendetyper som kunder kan välja vid inskickning av ärenden.
+- Ärendetyper kan läggas till och tas bort.
+- Borttagna ärendetyper inaktiveras i databasen men kan återaktiveras genom att lägga till en ny typ med samma namn.
 
-Får du error med divergent branches använd:
+### Redigera mall (/redigeramall)
+- Låter admins redigera det första automatiska utskicket vid ärendeskapande.
+- Förhandsgranskning av utskicket visas.
+- Vissa kravfunktioner (t.ex. ärendenummer, kundens chattlänk, kundens meddelande) är hårdkodade och kan inte modifieras.
 
-git config pull.rebase false
+### Arbetarsida (/arbetarsida)
+- Visar en lista över otilldelade ärenden där senaste svaret inte är från en kundtjänstmedarbetare.
+- Filtreringsalternativ:
+  - Samtliga ärenden.
+  - Obesvarade med tilldelad kundtjänstmedarbetare.
+  - Ärenden där senaste svaret är från kundtjänst.
+- Låter kundtjänstmedarbetare:
+  - Öppna chattar utan att tilldela ärendet.
+  - Öppna chatt och tilldela sig själv ärendet.
 
-Testa sedan git pull, sedan fixa de ändringar du skulle göra och använd git add och git commit sedan git push. Får du merge problem igen så kan det vara bra att prata med teamet.
+### Chatt (/chat/{chatid})
+- Visar en specifik chatt.
+- Endast tillgänglig för:
+  - Kundtjänstmedarbetare hos aktuellt företag.
+  - Kunden som har skickat in ärendet.
+- Visar hela chathistoriken (avsändare, meddelande, timestamp).
+- Kundtjänstmedarbetare kan:
+  - Skicka meddelanden.
+  - Använda "Send and take next open ticket" för att hoppa till nästa otilldelade ärende.
+- Kunden kan endast skicka meddelanden.
 
-## Merge strategy
-git pull (kolla om du är up to date),
+### Kontakta oss (/kontaktaoss/{företagsnamn})
+- Formulär för att skicka in ett ärende till ett företag.
+- Kräver:
+  - Ärendetyp.
+  - E-postadress.
+  - Meddelande.
+- Efter inskick skickas kunden till en bekräftelsesida och får ett mejl med en länk till sin chatt (`/guestlogin/{chatid}?email={customerEmail}`).
+  - Länken loggar in kunden och leder dem till `/chat/{chatid}`.
 
-git checkout "branch" ,
+### Password Reset (/reset-password/{resetToken})
+- Tillåter användare att byta lösenord.
+- Efter lösenordsbyte omdirigeras användaren till `/login`.
 
-git pull (kolla om du är up to date),
+---
 
-git merge main (för att mergea in main i din branch),
+För frågor eller support, kontakta oss via [support@teacheasesolutions.com](mailto:support@teacheasesolutions.com).
 
-kolla med git status
-
-commit changes and push changes,
-
-git checkout main,
-
-git merge "branch" (för att mergea din branch med main),
-
-# Npgsql
-för att ladda ner/ använda en sql databas så behövs ett package som heter Nuget package (Npgsql)
-Detta görs inne i Riders terminal för det projektet du vill använda det hos.
-"dotnet add package Npgsql --version 9.0.1"
-
-# Import SQL database into DataGrip
-to import a database with .sql format into Datagrip, follow these steps:
-
-1. Create a new database with the name of the database in the file (if the database is named fluffykittens, then the database should be named fluffykittens).
-2. Right click on the database (so not the elephant, which is the server) and select 'restore with pg_restore/psql'
-3. A window will pop up. In the upper left corner select 'psql'.
-4. In 'path to executable' search for where the psql.exe program is on your computer. It's usually in C:/Program Files/PostgreSQL/16/bin/psql.exe.
-5. In the 'path to dump' field locate the .sql file and select it.
-6. Click 'run'.
-7. This should load the database. If the database is empty and only show a little box with '...' then that means the database has no schema. To fix this, click the dots and a tiny menu will appear. Make sure 'default schema' is checked. This should solve the problem.
